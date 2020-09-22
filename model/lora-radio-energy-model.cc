@@ -14,6 +14,7 @@
  * Author: Romagnolo Stefano <romagnolostefano93@gmail.com>
  */
 
+#include "ns3/end-device-lora-phy.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/pointer.h"
@@ -67,6 +68,8 @@ LoraRadioEnergyModel::GetTypeId (void)
                      "Total energy consumption of the radio device.",
                      MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
                      "ns3::TracedValueCallback::Double")
+    // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
+    // tracesource
   ;
   return tid;
 }
@@ -276,7 +279,10 @@ void
 LoraRadioEnergyModel::HandleEnergyDepletion (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted!");
+  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to SLEEP mode");
+  ChangeState(EndDeviceLoraPhy::SLEEP);
+  // TODO handle case in which the energy is zero and the device turns off
+  // TODO insert event
   // invoke energy depletion callback, if set.
   if (!m_energyDepletionCallback.IsNull ())
     {
@@ -296,9 +302,12 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged!");
+  // TODO insert event
+  NS_LOG_DEBUG("TODO: Update tracker");
   // invoke energy recharged callback, if set.
   if (!m_energyRechargedCallback.IsNull ())
     {
+      NS_LOG_DEBUG("Calling the callback...");
       m_energyRechargedCallback ();
     }
 }

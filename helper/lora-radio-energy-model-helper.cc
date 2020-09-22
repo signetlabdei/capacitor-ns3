@@ -18,16 +18,24 @@
  */
 
 #include "lora-radio-energy-model-helper.h"
+#include "ns3/callback.h"
+#include "ns3/log-macros-enabled.h"
+#include "ns3/log.h"
 #include "ns3/lora-net-device.h"
+#include "ns3/lora-radio-energy-model.h"
 #include "ns3/lora-tx-current-model.h"
 #include "ns3/end-device-lora-phy.h"
 
 namespace ns3 {
 namespace lorawan {
 
+NS_LOG_COMPONENT_DEFINE ("LoraRadioEnergyModelHelper");
+
 LoraRadioEnergyModelHelper::LoraRadioEnergyModelHelper ()
 {
   m_radioEnergy.SetTypeId ("ns3::LoraRadioEnergyModel");
+  m_energyDepletionCallback.Nullify();
+  m_energyRechargedCallback.Nullify ();
 }
 
 LoraRadioEnergyModelHelper::~LoraRadioEnergyModelHelper ()
@@ -64,6 +72,20 @@ LoraRadioEnergyModelHelper::SetTxCurrentModel (std::string name,
   m_txCurrentModel = factory;
 }
 
+void
+LoraRadioEnergyModelHelper::SetEnergyDepletionCallback (
+    LoraRadioEnergyModel::LoraRadioEnergyDepletionCallback callback)
+{
+  // NS_LOG_FUNCTION (this);
+  m_energyDepletionCallback = callback;
+}
+
+  void
+  LoraRadioEnergyModelHelper::SetEnergyRechargedCallback (LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback callback)
+  {
+    // NS_LOG_FUNCTION (this);
+    m_energyDepletionCallback = callback;
+  }
 
 /*
  * Private function starts here.
@@ -87,20 +109,49 @@ LoraRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
   // set energy source pointer
   model->SetEnergySource (source);
 
-  // set energy depletion callback
+  // TODO set energy depletion callback
   // if none is specified, make a callback to EndDeviceLoraPhy::SetSleepMode
   Ptr<LoraNetDevice> loraDevice = device->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLoraPhy> loraPhy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+  // TODO link model and callback as done in LoraRadioEnergyModel constructor
+  if (m_energyDepletionCallback.IsNull ())
+    {
+      NS_LOG_DEBUG ("Energy depletion callback not set: switching device to sleep mode");
+      model->SetEnergyDepletionCallback(MakeCallback (&EndDeviceLoraPhy::SwitchToSleep, loraPhy));
+    }
+  else
+    {
+      // TODO Could be a callback defined here that implements a tracker
+      model->SetEnergyDepletionCallback (m_energyDepletionCallback);
+    }
   // add model to device model list in energy source
   source->AppendDeviceEnergyModel (model);
   // create and register energy model phy listener
   loraPhy->RegisterListener (model->GetPhyListener ());
+
+
 
   if (m_txCurrentModel.GetTypeId ().GetUid ())
     {
       Ptr<LoraTxCurrentModel> txcurrent = m_txCurrentModel.Create<LoraTxCurrentModel> ();
       model->SetTxCurrentModel (txcurrent);
     }
+
+  Ptr<EnergySourceContainer> EnergySourceContainerOnNode =
+      node->GetObject<EnergySourceContainer> ();
+  if (EnergySourceContainerOnNode == 0)
+    {
+      ObjectFactory fac;
+      fac.SetTypeId ("ns3::EnergySourceContainer");
+      EnergySourceContainerOnNode = fac.Create<EnergySourceContainer> ();
+      EnergySourceContainerOnNode->Add (source);
+      node->AggregateObject (EnergySourceContainerOnNode);
+    }
+  else
+    {
+      EnergySourceContainerOnNode->Add (source); // append new EnergySource
+    }
+
   return model;
 }
 

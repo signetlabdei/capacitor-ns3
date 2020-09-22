@@ -24,9 +24,11 @@
 #include "ns3/end-device-lorawan-mac.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/end-device-lora-phy.h"
+#include "ns3/energy-source.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include <algorithm>
+#include <iterator>
 
 namespace ns3 {
 namespace lorawan {
@@ -236,6 +238,24 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       LorawanMacHeader macHdr;
       ApplyNecessaryOptions (macHdr);
       packet->AddHeader (macHdr);
+      Ptr<EnergySource> nodeEnergySource = m_device->GetNode()->GetObject<EnergySourceContainer>()->Get(0);
+      if (nodeEnergySource == 0)
+        {
+          NS_LOG_DEBUG("Null pointer");
+        }
+      else
+        {
+          NS_LOG_DEBUG("Pointer ok!");
+        }
+      double remainingEnergy = nodeEnergySource->GetRemainingEnergy();
+      NS_LOG_DEBUG("Remaining energy is " << remainingEnergy);
+      if (!(remainingEnergy>0))
+        {
+          NS_LOG_DEBUG("Energy finished! We can not tx!");
+          return;
+        }
+
+
 
       // Reset MAC command list
       m_macCommandList.clear ();
@@ -940,5 +960,7 @@ EndDeviceLorawanMac::GetTransmissionPower (void)
 {
   return m_txPower;
 }
+
+
 }
 }

@@ -24,6 +24,7 @@
 #ifndef END_DEVICE_LORAWAN_MAC_H
 #define END_DEVICE_LORAWAN_MAC_H
 
+#include "ns3/energy-source.h"
 #include "ns3/lorawan-mac.h"
 #include "ns3/lorawan-mac-header.h"
 #include "ns3/lora-frame-header.h"
@@ -492,8 +493,8 @@ private:
   LorawanMacHeader::MType m_mType;
 
   uint8_t m_currentFCnt;
-};
 
+};
 
 } /* namespace ns3 */
 

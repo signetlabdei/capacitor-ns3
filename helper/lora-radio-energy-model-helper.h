@@ -85,6 +85,10 @@ public:
                           std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
                           std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
 
+  /* Set callbacks */
+  void SetEnergyDepletionCallback (LoraRadioEnergyModel::LoraRadioEnergyDepletionCallback callback);
+  void SetEnergyRechargedCallback (LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback callback);
+
 private:
   /**
    * \param device Pointer to the NetDevice to install DeviceEnergyModel.
@@ -99,7 +103,8 @@ private:
 private:
   ObjectFactory m_radioEnergy; ///< radio energy
   ObjectFactory m_txCurrentModel; ///< transmit current model
-
+  LoraRadioEnergyModel::LoraRadioEnergyDepletionCallback m_energyDepletionCallback;
+  LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback m_energyRechargedCallback;
 };
 
 } // namespace ns3

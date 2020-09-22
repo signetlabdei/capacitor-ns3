@@ -70,6 +70,7 @@ SimpleEndDeviceLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
   // Compute the duration of the transmission
   Time duration = GetOnAirTime (packet, txParams);
 
+  // TODO do this only if enough energy
   // We can send the packet: switch to the TX state
   SwitchToTx (txPowerDbm);
 
