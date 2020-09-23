@@ -22,6 +22,7 @@
  */
 
 #include "ns3/class-a-end-device-lorawan-mac.h"
+#include "ns3/abort.h"
 #include "ns3/end-device-lorawan-mac.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/log.h"
@@ -335,6 +336,9 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
       // Turn PHY layer to SLEEP
       phy->SwitchToSleep ();
       break;
+    case EndDeviceLoraPhy::OFF:
+      NS_ABORT_MSG("Error! Trying to close the first receive window when in OFF mode");
+      break;
     }
 }
 
@@ -401,6 +405,9 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
     case EndDeviceLoraPhy::STANDBY:
       // Turn PHY layer to sleep
       phy->SwitchToSleep ();
+      break;
+    case EndDeviceLoraPhy::OFF:
+      NS_ABORT_MSG ("Error! Trying to close the first receive window when in OFF mode");
       break;
     }
 

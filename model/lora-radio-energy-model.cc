@@ -15,6 +15,8 @@
  */
 
 #include "ns3/end-device-lora-phy.h"
+#include "ns3/end-device-status.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/pointer.h"
@@ -223,24 +225,8 @@ LoraRadioEnergyModel::ChangeState (int newState)
 
   // energy to decrease = current * voltage * time
   double energyToDecrease = 0.0;
-  double supplyVoltage = m_source->GetSupplyVoltage ();
-  switch (m_currentState)
-    {
-    case EndDeviceLoraPhy::STANDBY:
-      energyToDecrease = duration.GetSeconds () * m_idleCurrentA * supplyVoltage;
-      break;
-    case EndDeviceLoraPhy::TX:
-      energyToDecrease = duration.GetSeconds () * m_txCurrentA * supplyVoltage;
-      break;
-    case EndDeviceLoraPhy::RX:
-      energyToDecrease = duration.GetSeconds () * m_rxCurrentA * supplyVoltage;
-      break;
-    case EndDeviceLoraPhy::SLEEP:
-      energyToDecrease = duration.GetSeconds () * m_sleepCurrentA * supplyVoltage;
-      break;
-    default:
-      NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state: " << m_currentState);
-    }
+
+  energyToDecrease = ComputeLoraEnergyConsumption (m_currentState, duration);
 
   // update total energy consumption
   m_totalEnergyConsumption += energyToDecrease;
@@ -279,8 +265,8 @@ void
 LoraRadioEnergyModel::HandleEnergyDepletion (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to SLEEP mode");
-  ChangeState(EndDeviceLoraPhy::SLEEP);
+  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to OFF mode");
+  ChangeState(EndDeviceLoraPhy::OFF);
   // TODO handle case in which the energy is zero and the device turns off
   // TODO insert event
   // invoke energy depletion callback, if set.
@@ -301,7 +287,8 @@ void
 LoraRadioEnergyModel::HandleEnergyRecharged (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged!");
+  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged! Turning on the ED");
+  ChangeState (EndDeviceLoraPhy::SLEEP);
   // TODO insert event
   NS_LOG_DEBUG("TODO: Update tracker");
   // invoke energy recharged callback, if set.
@@ -345,6 +332,8 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
       return m_rxCurrentA;
     case EndDeviceLoraPhy::SLEEP:
       return m_sleepCurrentA;
+    case EndDeviceLoraPhy::OFF:
+      return 0;
     default:
       NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << m_currentState);
     }
@@ -370,10 +359,53 @@ LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
     case EndDeviceLoraPhy::SLEEP:
       stateName = "SLEEP";
       break;
+    case EndDeviceLoraPhy::OFF:
+      stateName = "OFF";
     }
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Switching to state: " << stateName <<
                 " at time = " << Simulator::Now ().GetSeconds () << " s");
 }
+
+double
+LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State status, Time duration)
+{
+  NS_LOG_FUNCTION(this);
+  NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
+
+  double energyConsumption = 0;
+  double supplyVoltage = m_source->GetSupplyVoltage ();
+
+  switch (status)
+    {
+    case EndDeviceLoraPhy::STANDBY:
+      energyConsumption = duration.GetSeconds () * m_idleCurrentA * supplyVoltage;
+      NS_LOG_DEBUG ("sTATE IS standby");
+      break;
+    case EndDeviceLoraPhy::TX:
+      energyConsumption = duration.GetSeconds () * m_txCurrentA * supplyVoltage;
+      NS_LOG_DEBUG("sTATE IS TX");
+      break;
+    case EndDeviceLoraPhy::RX:
+      energyConsumption = duration.GetSeconds () * m_rxCurrentA * supplyVoltage;
+      NS_LOG_DEBUG ("sTATE IS RX");
+      break;
+    case EndDeviceLoraPhy::SLEEP:
+      energyConsumption = duration.GetSeconds () * m_sleepCurrentA * supplyVoltage;
+      NS_LOG_DEBUG ("sTATE IS sleep");
+      break;
+    case EndDeviceLoraPhy::OFF:
+      energyConsumption = 0;
+      NS_LOG_DEBUG ("sTATE IS off");
+      break;
+    default:
+      NS_LOG_DEBUG ("Current state" << m_currentState);
+      NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state: " << m_currentState);
+    }
+
+  NS_LOG_DEBUG("energyconsumption=" << energyConsumption);
+  return energyConsumption;
+}
+
 
 // -------------------------------------------------------------------------- //
 

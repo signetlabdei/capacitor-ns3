@@ -280,6 +280,10 @@ public:
    */
   LoraRadioEnergyModelPhyListener * GetPhyListener (void);
 
+  /**
+   * Compute the energy consumed by the device in a given state and for a given duration
+   */
+  double ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State, Time duration);
 
 private:
   void DoDispose (void);
@@ -298,6 +302,7 @@ private:
    * can change its own state.
    */
   void SetLoraRadioState (const EndDeviceLoraPhy::State state);
+
 
   Ptr<EnergySource> m_source; ///< energy source
 

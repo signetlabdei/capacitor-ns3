@@ -183,15 +183,17 @@ int main (int argc, char *argv[])
   LoraRadioEnergyModelHelper radioEnergyHelper;
 
   // configure energy source
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (4)); // Energy in J
+  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.05)); // Energy in J
   basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
   basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.1));
-  basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(100)));
+  basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.5));
+  basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(50)));
 
       radioEnergyHelper.Set ("StandbyCurrentA", DoubleValue (0.0014));
-  radioEnergyHelper.Set ("TxCurrentA", DoubleValue (0.028));
+  // radioEnergyHelper.Set ("TxCurrentA", DoubleValue (0.028));
+  radioEnergyHelper.Set ("TxCurrentA", DoubleValue (0.8));
   // radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.0000015));
-  radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.2));
+  radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.02));
   radioEnergyHelper.Set ("RxCurrentA", DoubleValue (0.0112));
 
   radioEnergyHelper.SetTxCurrentModel ("ns3::ConstantLoraTxCurrentModel",
@@ -201,9 +203,9 @@ int main (int argc, char *argv[])
  //  // Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
   harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-                       TimeValue (Seconds(1)));
+                       TimeValue (MilliSeconds(500)));
  harvesterHelper.Set ("HarvestablePower",
-                      StringValue ("ns3::UniformRandomVariable[Min=0|Max=00.0000]"));
+                      StringValue ("ns3::UniformRandomVariable[Min=0|Max=0.2]"));
 
   // install source on EDs' nodes
   EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
@@ -241,7 +243,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (10));
+  Simulator::Stop (Seconds (30));
 
   Simulator::Run ();
 

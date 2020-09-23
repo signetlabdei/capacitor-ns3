@@ -136,11 +136,14 @@ SimpleEndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
     // In the SLEEP, TX and RX cases we cannot receive the packet: we only add
     // it to the list of interferers and do not schedule an EndReceive event for
     // it.
-    case SLEEP:
-      {
-        NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
-        break;
-      }
+    case OFF: {
+      NS_LOG_INFO ("Dropping packet because device is in OFF state");
+      break;
+    }
+    case SLEEP: {
+      NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
+      break;
+    }
     case TX:
       {
         NS_LOG_INFO ("Dropping packet because device is in TX state");

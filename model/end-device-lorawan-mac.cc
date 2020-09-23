@@ -25,6 +25,7 @@
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/energy-source.h"
+#include "ns3/lora-radio-energy-model.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include <algorithm>
@@ -247,15 +248,34 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
         {
           NS_LOG_DEBUG("Pointer ok!");
         }
-      double remainingEnergy = nodeEnergySource->GetRemainingEnergy();
-      NS_LOG_DEBUG("Remaining energy is " << remainingEnergy);
-      if (!(remainingEnergy>0))
+
+      // Predict energy consumption to decide if we can transmit
+      // Craft LoraTxParameters object
+      LoraTxParameters params;
+      params.sf = GetSfFromDataRate (m_dataRate);
+      params.headerDisabled = m_headerDisabled;
+      params.codingRate = m_codingRate;
+      params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+      params.nPreamble = m_nPreambleSymbols;
+      params.crcEnabled = 1;
+      params.lowDataRateOptimizationEnabled = 0;
+
+      Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
+      Time duration = m_phy->GetOnAirTime (packet, params);
+
+      Ptr<LoraRadioEnergyModel> loraradioemodel = nodeEnergySource->FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get(0)->GetObject<LoraRadioEnergyModel>();
+      EndDeviceLoraPhy::State stateForPrediction = EndDeviceLoraPhy::TX;
+      NS_LOG_DEBUG("State for prediction " << stateForPrediction);
+      double predictedEnergyConsumption = loraradioemodel->ComputeLoraEnergyConsumption (stateForPrediction, duration);
+      NS_LOG_DEBUG("Predicted energy consumption " << predictedEnergyConsumption);
+
+      double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
+      NS_LOG_DEBUG ("Remaining energy is " << remainingEnergy);
+      if (remainingEnergy < predictedEnergyConsumption)
         {
-          NS_LOG_DEBUG("Energy finished! We can not tx!");
+          NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
           return;
         }
-
-
 
       // Reset MAC command list
       m_macCommandList.clear ();

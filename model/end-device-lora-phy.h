@@ -137,7 +137,12 @@ public:
      * While the device is locked on an incoming packet, transmission is
      * not possible.
      */
-    RX
+    RX,
+
+    /**
+     * The device is turned OFF
+     */
+    OFF
   };
 
   static TypeId GetTypeId (void);
