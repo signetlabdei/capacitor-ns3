@@ -426,6 +426,15 @@ protected:
    */
   TracedCallback<uint8_t, bool, Time, Ptr<Packet> > m_requiredTxCallback;
 
+  /**
+   * The trace source fired when a packet can not be transmitted because of lack
+   * of energy.
+   *
+   * \see class CallBackTraceSource
+   * nodeId, Packet to tx, CurrentTime, enoughEnergy?
+   */
+  TracedCallback<uint32_t, Ptr<const Packet>, Time, bool> m_enoughEnergyForTx;
+
 private:
   /**
    * Randomly shuffle a Ptr<LogicalLoraChannel> vector.

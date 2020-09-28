@@ -113,17 +113,13 @@ LoraRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
   // if none is specified, make a callback to EndDeviceLoraPhy::SetSleepMode
   Ptr<LoraNetDevice> loraDevice = device->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLoraPhy> loraPhy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-  // TODO link model and callback as done in LoraRadioEnergyModel constructor
+
   if (m_energyDepletionCallback.IsNull ())
     {
-      NS_LOG_DEBUG ("Energy depletion callback not set: switching device to sleep mode");
-      model->SetEnergyDepletionCallback(MakeCallback (&EndDeviceLoraPhy::SwitchToSleep, loraPhy));
+      // TODO Decide what to do here
+      // Maybe nothing?
     }
-  else
-    {
-      // TODO Could be a callback defined here that implements a tracker
-      model->SetEnergyDepletionCallback (m_energyDepletionCallback);
-    }
+
   // add model to device model list in energy source
   source->AppendDeviceEnergyModel (model);
   // create and register energy model phy listener
@@ -147,6 +143,7 @@ LoraRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
       EnergySourceContainerOnNode->Add (source);
       node->AggregateObject (EnergySourceContainerOnNode);
     }
+  // If already existing, update
   else
     {
       EnergySourceContainerOnNode->Add (source); // append new EnergySource

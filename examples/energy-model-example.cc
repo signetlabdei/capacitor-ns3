@@ -6,12 +6,15 @@
 #include "ns3/basic-energy-harvester.h"
 #include "ns3/callback.h"
 #include "ns3/end-device-lora-phy.h"
+#include "ns3/end-device-lorawan-mac.h"
 #include "ns3/energy-harvester-container.h"
 #include "ns3/gateway-lora-phy.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/gateway-lorawan-mac.h"
+#include "ns3/lora-net-device.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/nstime.h"
+#include "ns3/packet.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
@@ -31,6 +34,7 @@
 #include "ns3/string.h"
 #include <algorithm>
 #include <ctime>
+#include <sys/types.h>
 
 using namespace ns3;
 using namespace lorawan;
@@ -56,15 +60,21 @@ EnergyDepletionCallback (void)
   NS_LOG_DEBUG("Energy depleted callback in main");
 }
 
+void
+CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet, Time time, bool boolValue)
+{
+  NS_LOG_DEBUG("Enough energy to tx? " << boolValue);
+}
+
 int main (int argc, char *argv[])
 {
 
   // Set up logging
   LogComponentEnable ("LoraEnergyModelExample", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
-  LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
-  LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
-  LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
@@ -72,7 +82,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -223,18 +233,26 @@ int main (int argc, char *argv[])
   myHarvester -> TraceConnectWithoutContext("TotalEnergyHarvested",
                                             MakeCallback(&OnEnergyHarvested));
 
-  // Try to set Depletion callback
-  // LoraRadioEnergyModel &loraradioemodel =
 
+  // Names::Add("Names/myEDmac", endDevices.Get(0)->GetObject<EndDeviceLorawanMac>());
+  Ptr<EndDeviceLorawanMac> myEDmac = endDevices.Get (0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac ()->GetObject<EndDeviceLorawanMac>();
+  if (myEDmac == 0)
+    {
+      NS_LOG_DEBUG("NULL POINTER!");
+    }
+  myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx", MakeCallback(&CheckEnoughEnergyCallback));
+      // ns3::Config::ConnectWithoutContext ("/Names/myEDmac/EnoughEnergyToTx",
+      // MakeCallback(&CheckEnoughEnergyCallback));
 
-  /**************
+      /**************
    * Get output *
    **************/
-  // FileHelper fileHelper;
-  // fileHelper.ConfigureFile ("battery-level", FileAggregator::SPACE_SEPARATED);
-  // fileHelper.WriteProbe ("ns3::DoubleProbe", "/Names/EnergySource/RemainingEnergy", "Output");
+      // FileHelper fileHelper;
+      // fileHelper.ConfigureFile ("battery-level", FileAggregator::SPACE_SEPARATED);
+      // fileHelper.WriteProbe ("ns3::DoubleProbe", "/Names/EnergySource/RemainingEnergy", "Output");
 
-  ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy", MakeCallback(&OnRemainingEnergyChange));
+      ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
+                                          MakeCallback (&OnRemainingEnergyChange));
 
   // Config::ConnectWithoutContext("/Names/EnergyHarvester/TotalEnergyHarvested",
   //                               MakeCallback(&OnEnergyHarvested));
@@ -243,7 +261,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (30));
+  Simulator::Stop (Seconds (15));
 
   Simulator::Run ();
 

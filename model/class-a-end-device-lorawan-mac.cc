@@ -233,6 +233,7 @@ ClassAEndDeviceLorawanMac::Receive (Ptr<Packet const> packet)
         }
     }
 
+
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 }
 
@@ -337,7 +338,9 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
       phy->SwitchToSleep ();
       break;
     case EndDeviceLoraPhy::OFF:
-      NS_ABORT_MSG("Error! Trying to close the first receive window when in OFF mode");
+      // The ED did not have enough energy to keep RX1 open and was put to OFF
+      NS_LOG_DEBUG ("Error! Trying to close the first receive window when in OFF mode");
+      // TODO Callback
       break;
     }
 }
@@ -407,7 +410,9 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
       phy->SwitchToSleep ();
       break;
     case EndDeviceLoraPhy::OFF:
-      NS_ABORT_MSG ("Error! Trying to close the first receive window when in OFF mode");
+      // The ED did not have enough energy to keep RX1 open and was put to OFF
+      NS_LOG_DEBUG ("Error! Trying to close the first receive window when in OFF mode");
+      // TODO Callback
       break;
     }
 
@@ -429,7 +434,6 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
           // Reset retransmission parameters
           resetRetransmissionParameters ();
         }
-
       else
         {
           NS_ABORT_MSG ("The number of retransmissions left is negative ! ");
@@ -544,6 +548,8 @@ ClassAEndDeviceLorawanMac::OnRxClassParamSetupReq (Ptr<RxParamSetupReq> rxParamS
                                                              dataRateOk, true));
 
 }
+
+
 
 } /* namespace lorawan */
 } /* namespace ns3 */

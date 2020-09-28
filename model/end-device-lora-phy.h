@@ -30,6 +30,9 @@
 #include "ns3/mobility-model.h"
 #include "ns3/node.h"
 #include "ns3/lora-phy.h"
+#include "ns3/energy-source.h"
+#include "ns3/basic-energy-source.h"
+
 
 namespace ns3 {
 namespace lorawan {
@@ -79,6 +82,11 @@ public:
    * Notify listeners that we woke up
    */
   virtual void NotifyStandby (void) = 0;
+
+  /**
+   * Notify listeners that the device is off
+   */
+  virtual void NotifyOff (void) = 0;
 };
 
 /**
@@ -214,6 +222,11 @@ public:
   void SwitchToSleep (void);
 
   /**
+   * Switch to the OFF state.
+   */
+  void SwitchToOff (void);
+
+  /**
    * Add the input listener to the list of objects to be notified of PHY-level
    * events.
    *
@@ -242,6 +255,8 @@ protected:
    * Switch to the TX state
    */
   void SwitchToTx (double txPowerDbm);
+
+  bool SwitchToOffIfNeeded (void);
 
   /**
    * Trace source for when a packet is lost because it was using a SF different from

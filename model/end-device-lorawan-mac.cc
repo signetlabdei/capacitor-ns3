@@ -22,6 +22,7 @@
  */
 
 #include "ns3/end-device-lorawan-mac.h"
+#include "ns3/assert.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/energy-source.h"
@@ -41,68 +42,59 @@ NS_OBJECT_ENSURE_REGISTERED (EndDeviceLorawanMac);
 TypeId
 EndDeviceLorawanMac::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::EndDeviceLorawanMac")
-    .SetParent<LorawanMac> ()
-    .SetGroupName ("lorawan")
-    .AddTraceSource ("RequiredTransmissions",
-                     "Total number of transmissions required to deliver this packet",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLorawanMac::m_requiredTxCallback),
-                     "ns3::TracedValueCallback::uint8_t")
-    .AddAttribute ("DataRate",
-                   "Data Rate currently employed by this end device",
-                   UintegerValue (0),
-                   MakeUintegerAccessor (&EndDeviceLorawanMac::m_dataRate),
-                   MakeUintegerChecker<uint8_t> (0, 5))
-    .AddAttribute ("DRControl",
-                   "Whether to request the NS to control this device's Data Rate",
-                   BooleanValue (),
-                   MakeBooleanAccessor (&EndDeviceLorawanMac::m_controlDataRate),
-                   MakeBooleanChecker ())
-    .AddTraceSource ("TxPower",
-                     "Transmission power currently employed by this end device",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLorawanMac::m_txPower),
-                     "ns3::TracedValueCallback::Double")
-    .AddTraceSource ("LastKnownLinkMargin",
-                     "Last known demodulation margin in "
-                     "communications between this end device "
-                     "and a gateway",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLorawanMac::m_lastKnownLinkMargin),
-                     "ns3::TracedValueCallback::Double")
-    .AddTraceSource ("LastKnownGatewayCount",
-                     "Last known number of gateways able to "
-                     "listen to this end device",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLorawanMac::m_lastKnownGatewayCount),
-                     "ns3::TracedValueCallback::Int")
-    .AddTraceSource ("AggregatedDutyCycle",
-                     "Aggregate duty cycle, in fraction form, "
-                     "this end device must respect",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLorawanMac::m_aggregatedDutyCycle),
-                     "ns3::TracedValueCallback::Double")
-    .AddAttribute ("MaxTransmissions",
-                   "Maximum number of transmissions for a packet",
-                   IntegerValue (8),
-                   MakeIntegerAccessor (&EndDeviceLorawanMac::m_maxNumbTx),
-                   MakeIntegerChecker<uint8_t> ())
-    .AddAttribute ("EnableEDDataRateAdaptation",
-                   "Whether the End Device should up its Data Rate "
-                   "in case it doesn't get a reply from the NS.",
-                   BooleanValue (false),
-                   MakeBooleanAccessor (&EndDeviceLorawanMac::m_enableDRAdapt),
-                   MakeBooleanChecker ())
-    .AddAttribute ("MType",
-                   "Specify type of message will be sent by this ED.",
-                   EnumValue (LorawanMacHeader::UNCONFIRMED_DATA_UP),
-                   MakeEnumAccessor (&EndDeviceLorawanMac::m_mType),
-                   MakeEnumChecker (LorawanMacHeader::UNCONFIRMED_DATA_UP,
-                                    "Unconfirmed",
-                                    LorawanMacHeader::CONFIRMED_DATA_UP,
-                                    "Confirmed"))
-    .AddConstructor<EndDeviceLorawanMac> ();
+  static TypeId tid =
+      TypeId ("ns3::EndDeviceLorawanMac")
+          .SetParent<LorawanMac> ()
+          .SetGroupName ("lorawan")
+          .AddTraceSource ("RequiredTransmissions",
+                           "Total number of transmissions required to deliver this packet",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_requiredTxCallback),
+                           "ns3::TracedValueCallback::uint8_t")
+          .AddAttribute ("DataRate", "Data Rate currently employed by this end device",
+                         UintegerValue (0), MakeUintegerAccessor (&EndDeviceLorawanMac::m_dataRate),
+                         MakeUintegerChecker<uint8_t> (0, 5))
+          .AddAttribute (
+              "DRControl", "Whether to request the NS to control this device's Data Rate",
+              BooleanValue (), MakeBooleanAccessor (&EndDeviceLorawanMac::m_controlDataRate),
+              MakeBooleanChecker ())
+          .AddTraceSource ("TxPower", "Transmission power currently employed by this end device",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_txPower),
+                           "ns3::TracedValueCallback::Double")
+          .AddTraceSource ("LastKnownLinkMargin",
+                           "Last known demodulation margin in "
+                           "communications between this end device "
+                           "and a gateway",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_lastKnownLinkMargin),
+                           "ns3::TracedValueCallback::Double")
+          .AddTraceSource ("LastKnownGatewayCount",
+                           "Last known number of gateways able to "
+                           "listen to this end device",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_lastKnownGatewayCount),
+                           "ns3::TracedValueCallback::Int")
+          .AddTraceSource ("AggregatedDutyCycle",
+                           "Aggregate duty cycle, in fraction form, "
+                           "this end device must respect",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_aggregatedDutyCycle),
+                           "ns3::TracedValueCallback::Double")
+          .AddAttribute ("MaxTransmissions", "Maximum number of transmissions for a packet",
+                         IntegerValue (8), MakeIntegerAccessor (&EndDeviceLorawanMac::m_maxNumbTx),
+                         MakeIntegerChecker<uint8_t> ())
+          .AddAttribute ("EnableEDDataRateAdaptation",
+                         "Whether the End Device should up its Data Rate "
+                         "in case it doesn't get a reply from the NS.",
+                         BooleanValue (false),
+                         MakeBooleanAccessor (&EndDeviceLorawanMac::m_enableDRAdapt),
+                         MakeBooleanChecker ())
+          .AddAttribute ("MType", "Specify type of message will be sent by this ED.",
+                         EnumValue (LorawanMacHeader::UNCONFIRMED_DATA_UP),
+                         MakeEnumAccessor (&EndDeviceLorawanMac::m_mType),
+                         MakeEnumChecker (LorawanMacHeader::UNCONFIRMED_DATA_UP, "Unconfirmed",
+                                          LorawanMacHeader::CONFIRMED_DATA_UP, "Confirmed"))
+          .AddTraceSource ("EnoughEnergyToTx",
+                           "Trace source indicating if there is enough energy to transmit the current packet",
+                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_enoughEnergyForTx),
+                           "ns3::Packet::TracedCallback")
+          .AddConstructor<EndDeviceLorawanMac> ();
   return tid;
 }
 
@@ -240,14 +232,15 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       ApplyNecessaryOptions (macHdr);
       packet->AddHeader (macHdr);
       Ptr<EnergySource> nodeEnergySource = m_device->GetNode()->GetObject<EnergySourceContainer>()->Get(0);
-      if (nodeEnergySource == 0)
-        {
-          NS_LOG_DEBUG("Null pointer");
-        }
-      else
-        {
-          NS_LOG_DEBUG("Pointer ok!");
-        }
+      NS_ASSERT(!(nodeEnergySource == 0));
+      // if (nodeEnergySource == 0)
+      //   {
+      //     NS_LOG_DEBUG("Null pointer");
+      //   }
+      // else
+      //   {
+      //     NS_LOG_DEBUG("Pointer ok!");
+      //   }
 
       // Predict energy consumption to decide if we can transmit
       // Craft LoraTxParameters object
@@ -263,10 +256,10 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
       Time duration = m_phy->GetOnAirTime (packet, params);
 
-      Ptr<LoraRadioEnergyModel> loraradioemodel = nodeEnergySource->FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get(0)->GetObject<LoraRadioEnergyModel>();
+      Ptr<LoraRadioEnergyModel> loraradioemodel = nodeEnergySource->
+        FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get(0)->GetObject<LoraRadioEnergyModel>();
       EndDeviceLoraPhy::State stateForPrediction = EndDeviceLoraPhy::TX;
-      NS_LOG_DEBUG("State for prediction " << stateForPrediction);
-      double predictedEnergyConsumption = loraradioemodel->ComputeLoraEnergyConsumption (stateForPrediction, duration);
+      double predictedEnergyConsumption = loraradioemodel-> ComputeLoraEnergyConsumption (stateForPrediction, duration);
       NS_LOG_DEBUG("Predicted energy consumption " << predictedEnergyConsumption);
 
       double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
@@ -274,7 +267,14 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       if (remainingEnergy < predictedEnergyConsumption)
         {
           NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
+          m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
+          // TODO? same check fr RXwind?
           return;
+        }
+      else
+        {
+          // Remaining energy is enough. With the transmission we could fall under the battery threshold
+          m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
         }
 
       // Reset MAC command list

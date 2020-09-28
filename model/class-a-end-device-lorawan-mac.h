@@ -29,6 +29,7 @@
 #include "ns3/lora-frame-header.h"          // RxParamSetupReq
 // #include "ns3/random-variable-stream.h"
 #include "ns3/lora-device-address.h"
+#include "ns3/basic-energy-source.h"
 // #include "ns3/traced-value.h"
 
 namespace ns3 {
@@ -143,6 +144,7 @@ public:
    * @return The frequency, in MHz
    */
   double GetSecondReceiveWindowFrequency (void);
+
 
   /////////////////////////
   // MAC command methods //

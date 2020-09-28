@@ -83,6 +83,10 @@ public:
    */
   void NotifyStandby (void);
 
+  /**
+   * Defined in ns3::LoraEndDevicePhyListener
+   */
+  void NotifyOff (void);
 
 private:
   /**

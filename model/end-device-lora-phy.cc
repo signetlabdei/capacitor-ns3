@@ -19,6 +19,7 @@
  */
 
 #include <algorithm>
+#include "ns3/assert.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/simulator.h"
 #include "ns3/lora-tag.h"
@@ -119,13 +120,17 @@ EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  m_state = STANDBY;
-
-  // Notify listeners of the state change
-  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+  if (!SwitchToOffIfNeeded ())
     {
-      (*i)->NotifyStandby ();
+      m_state = STANDBY;
+
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifyStandby ();
+        }
     }
+
 }
 
 void
@@ -135,13 +140,17 @@ EndDeviceLoraPhy::SwitchToRx (void)
 
   NS_ASSERT (m_state == STANDBY);
 
-  m_state = RX;
-
-  // Notify listeners of the state change
-  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+  if (!SwitchToOffIfNeeded ())
     {
-      (*i)->NotifyRxStart ();
+      m_state = RX;
+
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifyRxStart ();
+        }
     }
+
 }
 
 void
@@ -151,28 +160,53 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 
   NS_ASSERT (m_state != RX);
 
-  m_state = TX;
-
-  // Notify listeners of the state change
-  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+  if (!SwitchToOffIfNeeded ())
     {
-      (*i)->NotifyTxStart (txPowerDbm);
+      m_state = TX;
+
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifyTxStart (txPowerDbm);
+        }
     }
+
 }
 
 void
 EndDeviceLoraPhy::SwitchToSleep (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_DEBUG("Current state " << m_state);
 
   NS_ASSERT (m_state == STANDBY);
 
-  m_state = SLEEP;
+  if (!SwitchToOffIfNeeded ())
+    {
+      m_state = SLEEP;
+
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifySleep ();
+        }
+    }
+
+}
+
+void
+EndDeviceLoraPhy::SwitchToOff (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG(!(m_state == OFF), "Trying to switch to OFF, but the ED is already in OFF! check case");
+
+  m_state = OFF;
 
   // Notify listeners of the state change
   for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
     {
-      (*i)->NotifySleep ();
+      (*i)->NotifyOff ();
     }
 }
 
@@ -200,5 +234,44 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
     }
 }
 
+bool
+EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  // TODO Insert assert?
+  // TODO Insert Callback if we interrupt a TX or RX
+
+  Ptr<EnergySource> nodeEnergySource =
+      m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
+  if (nodeEnergySource == 0)
+    {
+      NS_LOG_DEBUG ("Energy Source not found: returning false");
+      return false;
+    }
+
+  Ptr<BasicEnergySource> basicEnergySource = nodeEnergySource->GetObject<BasicEnergySource> ();
+
+  if (basicEnergySource == 0)
+    {
+      NS_LOG_DEBUG("Basic Energy Source not found: returning false");
+      return false;
+    }
+
+  DoubleValue lowBatteryThreshold;
+  basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowBatteryThreshold);
+  double batteryFraction = basicEnergySource->GetEnergyFraction ();
+
+  if (batteryFraction < lowBatteryThreshold.Get ())
+    {
+      NS_LOG_DEBUG("Remaining energy lower than the threshold! Switching to OFF mode");
+      SwitchToOff ();
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
 }
 }
