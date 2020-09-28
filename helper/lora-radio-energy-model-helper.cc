@@ -125,6 +125,8 @@ LoraRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
   // create and register energy model phy listener
   loraPhy->RegisterListener (model->GetPhyListener ());
 
+  model -> SetLoraNetDevice(loraDevice);
+
 
 
   if (m_txCurrentModel.GetTypeId ().GetUid ())

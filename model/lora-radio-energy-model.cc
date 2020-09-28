@@ -14,10 +14,12 @@
  * Author: Romagnolo Stefano <romagnolostefano93@gmail.com>
  */
 
+#include "ns3/assert.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-status.h"
 #include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
+#include "ns3/lora-net-device.h"
 #include "ns3/simulator.h"
 #include "ns3/pointer.h"
 #include "ns3/energy-source.h"
@@ -79,7 +81,8 @@ LoraRadioEnergyModel::GetTypeId (void)
 LoraRadioEnergyModel::LoraRadioEnergyModel ()
 {
   NS_LOG_FUNCTION (this);
-  m_currentState = EndDeviceLoraPhy::SLEEP;      // initially STANDBY
+  m_currentState = EndDeviceLoraPhy::OFF;      // initially OFF
+  m_device = NULL;
   m_lastUpdateTime = Seconds (0.0);
   m_nPendingChangeState = 0;
   m_isSupersededChangeState = false;
@@ -96,6 +99,15 @@ LoraRadioEnergyModel::~LoraRadioEnergyModel ()
 {
   NS_LOG_FUNCTION (this);
   delete m_listener;
+}
+
+
+void
+LoraRadioEnergyModel::SetLoraNetDevice (Ptr<LoraNetDevice> device)
+{
+  NS_LOG_FUNCTION (this);
+
+  m_device = device;
 }
 
 void
@@ -173,6 +185,11 @@ EndDeviceLoraPhy::State
 LoraRadioEnergyModel::GetCurrentState (void) const
 {
   NS_LOG_FUNCTION (this);
+  Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+
+  NS_ASSERT_MSG (!(edPhy == 0), "EndDeviceLoraPhy object not associated to this LoraRadioEnergyModel!");
+  NS_ASSERT_MSG(!(m_currentState == edPhy -> GetState()), "PHY state different from state saved in LoraRadioEnergyModel!");
+
   return m_currentState;
 }
 
@@ -251,9 +268,30 @@ LoraRadioEnergyModel::ChangeState (int newState)
       // update current state & last update time stamp
       SetLoraRadioState ((EndDeviceLoraPhy::State) newState);
 
-      // some debug message
-      NS_LOG_DEBUG ("LoraRadioEnergyModel:Total energy consumption is " <<
-                    m_totalEnergyConsumption << "J");
+      // // Also update PHY
+      // Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+      // switch (newState)
+      // {
+      // case EndDeviceLoraPhy::STANDBY:
+      //   // This can not be done by this class
+      //   // TODO Implement for Class A devices
+      //   break;
+      // case EndDeviceLoraPhy::TX:
+      //   // This can not be done by this class
+      //   break;
+      // case EndDeviceLoraPhy::RX:
+      //   // This can not be done by this class
+      //   break;
+      // case EndDeviceLoraPhy::SLEEP:
+      //   edPhy->SwitchToSleep ();
+      //   break;
+      // case EndDeviceLoraPhy::OFF:
+      //   edPhy->SwitchToOff ();
+      //   break;
+      // default:
+      //   NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state: " << newState);
+      //   }
+
     }
 
   m_isSupersededChangeState = (m_nPendingChangeState > 1);
@@ -266,8 +304,9 @@ LoraRadioEnergyModel::HandleEnergyDepletion (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to OFF mode");
-  ChangeState(EndDeviceLoraPhy::OFF);
-  // TODO handle case in which the energy is zero and the device turns off
+  // ChangeState(EndDeviceLoraPhy::OFF); // This will be done by the notification
+  Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+  edPhy -> SwitchToOff();
   // TODO insert event
   // invoke energy depletion callback, if set.
   if (!m_energyDepletionCallback.IsNull ())
@@ -288,8 +327,11 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged! Turning on the ED");
-  // TODO Update phy
-  ChangeState (EndDeviceLoraPhy::SLEEP);
+
+  // ChangeState (EndDeviceLoraPhy::SLEEP);
+  Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+  edPhy->SwitchToSleep ();
+
   // TODO insert event
   NS_LOG_DEBUG("TODO: Update tracker");
   // invoke energy recharged callback, if set.

@@ -18,6 +18,7 @@
 #define LORA_RADIO_ENERGY_MODEL_H
 
 #include "ns3/device-energy-model.h"
+#include "ns3/lora-net-device.h"
 #include "ns3/traced-value.h"
 #include "end-device-lora-phy.h"
 #include "lora-tx-current-model.h"
@@ -148,6 +149,12 @@ public:
   static TypeId GetTypeId (void);
   LoraRadioEnergyModel ();
   virtual ~LoraRadioEnergyModel ();
+
+  /**
+   * Set the associated LoraNetDevice
+   */
+  void SetLoraNetDevice (Ptr<LoraNetDevice> device);
+
 
   /**
    * \brief Sets pointer to EnergySouce installed on node.
@@ -322,6 +329,7 @@ private:
   TracedValue<double> m_totalEnergyConsumption;
 
   // State variables.
+  Ptr<LoraNetDevice> m_device; // A pointer to the device associated to this loranode
   EndDeviceLoraPhy::State m_currentState;  ///< current state the radio is in
   Time m_lastUpdateTime;          ///< time stamp of previous energy update
 

@@ -179,10 +179,11 @@ EndDeviceLoraPhy::SwitchToSleep (void)
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_DEBUG("Current state " << m_state);
 
-  NS_ASSERT (m_state == STANDBY);
+  NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
 
   if (!SwitchToOffIfNeeded ())
     {
+      NS_LOG_DEBUG("Actually switching to sleep");
       m_state = SLEEP;
 
       // Notify listeners of the state change
@@ -199,7 +200,12 @@ EndDeviceLoraPhy::SwitchToOff (void)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG(!(m_state == OFF), "Trying to switch to OFF, but the ED is already in OFF! check case");
+  if (m_state == OFF)
+    {
+      NS_LOG_DEBUG ("Trying to switch to OFF, but the ED is already in OFF! check case");
+      // TODO callback to keep trace of some failure
+      return;
+    }
 
   m_state = OFF;
 
@@ -240,6 +246,7 @@ EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
   NS_LOG_FUNCTION (this);
 
   // TODO Insert assert?
+  // TODO We could take the state which should be set as input, and than call the corresponding callback
   // TODO Insert Callback if we interrupt a TX or RX
 
   Ptr<EnergySource> nodeEnergySource =

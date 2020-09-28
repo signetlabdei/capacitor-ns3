@@ -88,11 +88,12 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -188,7 +189,7 @@ int main (int argc, char *argv[])
    *********************************************/
 
   PeriodicSenderHelper periodicSenderHelper;
-  periodicSenderHelper.SetPeriod (Seconds (5));
+  periodicSenderHelper.SetPeriod (Seconds (15));
 
   periodicSenderHelper.Install (endDevices);
 
@@ -207,8 +208,9 @@ int main (int argc, char *argv[])
   basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(20)));
 
   radioEnergyHelper.Set ("StandbyCurrentA", DoubleValue (0.0014));
+  // radioEnergyHelper.Set ("StandbyCurrentA", DoubleValue (0.01));
   radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.0000015));
-  radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.02));
+  // radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.002));
   radioEnergyHelper.Set ("RxCurrentA", DoubleValue (0.0112));
 
   radioEnergyHelper.SetTxCurrentModel ("ns3::ConstantLoraTxCurrentModel",
@@ -218,9 +220,9 @@ int main (int argc, char *argv[])
  //  // Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
   harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-                       TimeValue (MilliSeconds(50)));
+                       TimeValue (Seconds(10)));
   harvesterHelper.Set ("HarvestablePower",
-                      StringValue ("ns3::UniformRandomVariable[Min=0|Max=0.02]"));
+                      StringValue ("ns3::UniformRandomVariable[Min=0|Max=0.001]"));
 
   // install source on EDs' nodes
   EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
@@ -250,7 +252,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (80));
+  Simulator::Stop (Seconds (50));
 
   Simulator::Run ();
 
