@@ -44,7 +44,10 @@ using namespace lorawan;
 
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
-// Trace sinks
+std::string filename1 = "remainingEnegy.txt";
+std::string filename2 = "deviceStates.txt";
+
+// Callbcks
 
 void
 OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
@@ -77,8 +80,36 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet, Time time,
 //   NS_LOG_DEBUG("Enough energy to tx? " << boolValue);
 // }
 
+void
+OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::State status)
+{
+  NS_LOG_DEBUG ("OnEndDeviceStateChange " << status);
+  // std::cout << Simulator::Now().GetSeconds() << " " << status << std::endl;
+
+  const char *c = filename2.c_str ();
+  std::ofstream outputFile;
+  if (Simulator::Now () == Seconds (0))
+    {
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+    }
+  else
+    {
+      // Only append to the file
+      outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
+
+  outputFile << Simulator::Now ().GetSeconds () << " " << status
+             << std::endl;
+
+  outputFile.close ();
+}
+
+
 int main (int argc, char *argv[])
 {
+
+  // Inputs
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
@@ -93,7 +124,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -201,7 +232,7 @@ int main (int argc, char *argv[])
   LoraRadioEnergyModelHelper radioEnergyHelper;
 
   // configure energy source
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (1)); // Energy in J
+  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.06)); // Energy in J
   basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
   basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.1));
   basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.3));
@@ -217,12 +248,19 @@ int main (int argc, char *argv[])
                                        "TxCurrent", DoubleValue (0.028));
   // radioEnergyHelper.SetEnergyDepletionCallback(MakeCallback(&EnergyDepletionCallback));
 
- //  // Energy harvesting
+  //  // Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
   harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-                       TimeValue (Seconds(10)));
-  harvesterHelper.Set ("HarvestablePower",
-                      StringValue ("ns3::UniformRandomVariable[Min=0|Max=0.001]"));
+                       TimeValue (MilliSeconds(500)));
+  // Visconti, Paolo, et al."An overview on state-of-art energy harvesting
+  //     techniques and choice criteria: a wsn node for goods transport and
+  //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res
+  //     7(2017) : 1281 - 1295.
+  // Let's assume we are OUTDOOR, and the surface we are provided is 2 cm2
+  double minPowerDensity = 30e-3;
+  double maxPowerDensity = 0.30e-3;
+  std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
+  harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
   // install source on EDs' nodes
   EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
@@ -242,9 +280,11 @@ int main (int argc, char *argv[])
 
 
   // Names::Add("Names/myEDmac", endDevices.Get(0)->GetObject<EndDeviceLorawanMac>());
-  Ptr<EndDeviceLorawanMac> myEDmac = endDevices.Get (0)->GetDevice(0)->GetObject<LoraNetDevice>()->GetMac ()->GetObject<EndDeviceLorawanMac>();
+  Ptr<LoraNetDevice> loraDevice = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ();
+  Ptr<EndDeviceLorawanMac> myEDmac = loraDevice->GetMac ()->GetObject<EndDeviceLorawanMac> ();
+  Ptr<EndDeviceLoraPhy> myEDphy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
   // myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx", MakeCallback(&CheckEnoughEnergyCallback));
-
+  myEDphy -> TraceConnectWithoutContext("EndDeviceState", MakeCallback (&OnEndDeviceStateChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
                                           MakeCallback (&OnRemainingEnergyChange));
 
@@ -252,7 +292,7 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (50));
+  Simulator::Stop (Seconds (125));
 
   Simulator::Run ();
 
