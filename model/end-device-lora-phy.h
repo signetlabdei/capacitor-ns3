@@ -79,6 +79,11 @@ public:
   virtual void NotifySleep (void) = 0;
 
   /**
+   * Notify listeners that we went to idle
+   */
+  virtual void NotifyIdle (void) = 0;
+
+  /**
    * Notify listeners that we woke up
    */
   virtual void NotifyStandby (void) = 0;
@@ -118,8 +123,7 @@ public:
    * demodulator which can either send, receive, stay idle or go in a deep
    * sleep state.
    */
-  enum State
-  {
+  enum State {
     /**
      * The PHY layer is sleeping.
      * During sleep, the device is not listening for incoming messages.
@@ -150,7 +154,18 @@ public:
     /**
      * The device is turned OFF
      */
-    OFF
+    OFF,
+
+    /**
+     * The PHY is in idle state before the opening of a RX window. In this case,
+     * the MCU state is sleeping, while the Radio is idle. This "trasitory
+     * sleeping state" has been proved to have higher energy consumption than the
+     * SLEEP state (state between the closing of RX2 and a new transmission) in
+     * Casals, Lluís, et al. "Modeling the energy performance of LoRaWAN."
+     * Sensors 17.10 (2017): 2364.
+     */
+    IDLE,
+
   };
 
   static TypeId GetTypeId (void);
@@ -210,6 +225,11 @@ public:
    * \return The state this EndDeviceLoraPhy is currently in.
    */
   EndDeviceLoraPhy::State GetState (void);
+
+  /**
+   * SwitchToIdle.
+   */
+  void SwitchToIdle (void);
 
   /**
    * Switch to the STANDBY state.

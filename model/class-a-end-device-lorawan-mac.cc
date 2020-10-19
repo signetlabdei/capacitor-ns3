@@ -234,6 +234,7 @@ ClassAEndDeviceLorawanMac::Receive (Ptr<Packet const> packet)
     }
 
 
+  // Successful reception: switch to sleep
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
 }
 
@@ -286,8 +287,8 @@ ClassAEndDeviceLorawanMac::TxFinished (Ptr<const Packet> packet)
   //                                              &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow,
   //                                              this);
 
-  // Switch the PHY to sleep
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
+  // Switch the PHY to IDLE (waiting time before RX1)
+  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToIdle ();
 }
 
 void
@@ -327,6 +328,10 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
       NS_ABORT_MSG ("PHY was in TX mode when attempting to " <<
                     "close a receive window.");
       break;
+    case EndDeviceLoraPhy::IDLE:
+      NS_ABORT_MSG ("PHY was in IDLE mode when attempting to "
+                    << "close a receive window (which was not opened).");
+      break;
     case EndDeviceLoraPhy::RX:
       // PHY is receiving: let it finish. The Receive method will switch it back to SLEEP.
       break;
@@ -334,8 +339,8 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
       // PHY has received, and the MAC's Receive already put the device to sleep
       break;
     case EndDeviceLoraPhy::STANDBY:
-      // Turn PHY layer to SLEEP
-      phy->SwitchToSleep ();
+      // Turn PHY layer to IDLE (sleep between receive windows)
+      phy->SwitchToIdle ();
       break;
     case EndDeviceLoraPhy::OFF:
       // The ED did not have enough energy to keep RX1 open and was put to OFF
@@ -398,6 +403,10 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
   switch (phy->GetState ())
     {
     case EndDeviceLoraPhy::TX:
+      break;
+    case EndDeviceLoraPhy::IDLE:
+      NS_ABORT_MSG ("PHY was in IDLE mode when attempting to "
+                    << "close a receive window (which was not opened).");
       break;
     case EndDeviceLoraPhy::SLEEP:
       break;

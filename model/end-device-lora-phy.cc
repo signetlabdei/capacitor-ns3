@@ -116,6 +116,23 @@ EndDeviceLoraPhy::SetFrequency (double frequencyMHz)
 }
 
 void
+EndDeviceLoraPhy::SwitchToSleep (void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  if (!SwitchToOffIfNeeded ())
+    {
+      m_state = SLEEP;
+
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifySleep();
+        }
+    }
+}
+
+void
 EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -174,7 +191,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 }
 
 void
-EndDeviceLoraPhy::SwitchToSleep (void)
+EndDeviceLoraPhy::SwitchToIdle (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_DEBUG("Current state " << m_state);
@@ -183,13 +200,13 @@ EndDeviceLoraPhy::SwitchToSleep (void)
 
   if (!SwitchToOffIfNeeded ())
     {
-      NS_LOG_DEBUG("Actually switching to sleep");
-      m_state = SLEEP;
+      NS_LOG_DEBUG("Actually switching to idle");
+      m_state = IDLE;
 
       // Notify listeners of the state change
       for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
         {
-          (*i)->NotifySleep ();
+          (*i)->NotifyIdle ();
         }
     }
 
@@ -240,6 +257,7 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
     }
 }
 
+  // TODO Update by quering the energySource / loraradio ?? if going to sleep or off!
 bool
 EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
 {

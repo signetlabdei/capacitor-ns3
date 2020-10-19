@@ -144,6 +144,10 @@ SimpleEndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
       NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
       break;
     }
+    case IDLE: {
+      NS_LOG_INFO("Dropping packet beacuse device is in IDLE state and receive window is not open yet");
+      break;
+    }
     case TX:
       {
         NS_LOG_INFO ("Dropping packet because device is in TX state");

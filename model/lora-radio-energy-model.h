@@ -77,6 +77,11 @@ public:
   /**
    * Defined in ns3::LoraEndDevicePhyListener
    */
+  void NotifyIdle (void);
+
+  /**
+   * Defined in ns3::LoraEndDevicePhyListener
+   */
   void NotifySleep (void);
 
   /**
@@ -174,17 +179,18 @@ public:
 
   // Setter & getters for state power consumption.
   /**
-   * \brief Gets idle current.
+   * \brief Gets standby current.
    *
-   * \returns idle current of the lora device.
+   * \returns standby current of the lora device.
    */
   double GetStandbyCurrentA (void) const;
   /**
-   * \brief Sets idle current.
+   * \brief Sets standby current.
    *
-   * \param idleCurrentA the idle current
+   * \param standbyCurrentA the standby current
    */
   void SetStandbyCurrentA (double idleCurrentA);
+
   /**
    * \brief Gets transmit current.
    *
@@ -197,6 +203,7 @@ public:
    * \param txCurrentA the transmit current
    */
   void SetTxCurrentA (double txCurrentA);
+
   /**
    * \brief Gets receive current.
    *
@@ -209,6 +216,20 @@ public:
    * \param rxCurrentA the receive current
    */
   void SetRxCurrentA (double rxCurrentA);
+
+  /**
+   * \brief Gets idle current.
+   *
+   * \returns idle current of the lora device.
+   */
+  double GetIdleCurrentA (void) const;
+  /**
+   * \brief Sets idle current.
+   *
+   * \param idleCurrentA the idle current
+   */
+  void SetIdleCurrentA (double idleCurrentA);
+
   /**
    * \brief Gets sleep current.
    *

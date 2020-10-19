@@ -12,6 +12,7 @@
  *
  *
  * Author: Romagnolo Stefano <romagnolostefano93@gmail.com>
+ * Author: Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #include "ns3/assert.h"
@@ -36,45 +37,47 @@ NS_OBJECT_ENSURE_REGISTERED (LoraRadioEnergyModel);
 TypeId
 LoraRadioEnergyModel::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::LoraRadioEnergyModel")
-    .SetParent<DeviceEnergyModel> ()
-    .SetGroupName ("Energy")
-    .AddConstructor<LoraRadioEnergyModel> ()
-    .AddAttribute ("StandbyCurrentA",
-                   "The default radio Standby current in Ampere.",
-                   DoubleValue (0.0014),      // idle mode = 1.4mA
-                   MakeDoubleAccessor (&LoraRadioEnergyModel::SetStandbyCurrentA,
-                                       &LoraRadioEnergyModel::GetStandbyCurrentA),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("TxCurrentA",
-                   "The radio Tx current in Ampere.",
-                   DoubleValue (0.028),        // transmit at 0dBm = 28mA
-                   MakeDoubleAccessor (&LoraRadioEnergyModel::SetTxCurrentA,
-                                       &LoraRadioEnergyModel::GetTxCurrentA),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("RxCurrentA",
-                   "The radio Rx current in Ampere.",
-                   DoubleValue (0.0112),        // receive mode = 11.2mA
-                   MakeDoubleAccessor (&LoraRadioEnergyModel::SetRxCurrentA,
-                                       &LoraRadioEnergyModel::GetRxCurrentA),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("SleepCurrentA",
-                   "The radio Sleep current in Ampere.",
-                   DoubleValue (0.0000015),      // sleep mode = 1.5microA
-                   MakeDoubleAccessor (&LoraRadioEnergyModel::SetSleepCurrentA,
-                                       &LoraRadioEnergyModel::GetSleepCurrentA),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("TxCurrentModel", "A pointer to the attached tx current model.",
-                   PointerValue (),
-                   MakePointerAccessor (&LoraRadioEnergyModel::m_txCurrentModel),
-                   MakePointerChecker<LoraTxCurrentModel> ())
-    .AddTraceSource ("TotalEnergyConsumption",
-                     "Total energy consumption of the radio device.",
-                     MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
-                     "ns3::TracedValueCallback::Double")
-    // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
-    // tracesource
-  ;
+  static TypeId tid =
+      TypeId ("ns3::LoraRadioEnergyModel")
+          .SetParent<DeviceEnergyModel> ()
+          .SetGroupName ("Energy")
+          .AddConstructor<LoraRadioEnergyModel> ()
+          .AddAttribute ("StandbyCurrentA", "The default radio Standby current in Ampere.",
+                         DoubleValue (0.0014), // idle mode = 1.4mA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetStandbyCurrentA,
+                                             &LoraRadioEnergyModel::GetStandbyCurrentA),
+                         MakeDoubleChecker<double> ())
+          .AddAttribute ("IdleCurrentA", "The default radio Idle current in Ampere.",
+                         DoubleValue (0.000007), // idle mode = 7 uA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetStandbyCurrentA,
+                                             &LoraRadioEnergyModel::GetStandbyCurrentA),
+                         MakeDoubleChecker<double> ())
+          .AddAttribute ("TxCurrentA", "The radio Tx current in Ampere.",
+                         DoubleValue (0.028), // transmit at 0dBm = 28mA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetTxCurrentA,
+                                             &LoraRadioEnergyModel::GetTxCurrentA),
+                         MakeDoubleChecker<double> ())
+          .AddAttribute ("RxCurrentA", "The radio Rx current in Ampere.",
+                         DoubleValue (0.0112), // receive mode = 11.2mA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetRxCurrentA,
+                                             &LoraRadioEnergyModel::GetRxCurrentA),
+                         MakeDoubleChecker<double> ())
+          .AddAttribute ("SleepCurrentA", "The radio Sleep current in Ampere.",
+                         DoubleValue (0.0000015), // sleep mode = 1.5microA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetSleepCurrentA,
+                                             &LoraRadioEnergyModel::GetSleepCurrentA),
+                         MakeDoubleChecker<double> ())
+          .AddAttribute ("TxCurrentModel", "A pointer to the attached tx current model.",
+                         PointerValue (),
+                         MakePointerAccessor (&LoraRadioEnergyModel::m_txCurrentModel),
+                         MakePointerChecker<LoraTxCurrentModel> ())
+          .AddTraceSource (
+              "TotalEnergyConsumption", "Total energy consumption of the radio device.",
+              MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
+              "ns3::TracedValueCallback::Double")
+      // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
+      // tracesource
+      ;
   return tid;
 }
 
@@ -165,6 +168,20 @@ LoraRadioEnergyModel::SetRxCurrentA (double rxCurrentA)
 {
   NS_LOG_FUNCTION (this << rxCurrentA);
   m_rxCurrentA = rxCurrentA;
+}
+
+double
+LoraRadioEnergyModel::GetIdleCurrentA (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_idleCurrentA;
+}
+
+void
+LoraRadioEnergyModel::SetIdleCurrentA (double idleCurrentA)
+{
+  NS_LOG_FUNCTION (this << idleCurrentA);
+  m_idleCurrentA = idleCurrentA;
 }
 
 double
@@ -375,6 +392,8 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
       return m_rxCurrentA;
     case EndDeviceLoraPhy::SLEEP:
       return m_sleepCurrentA;
+    case EndDeviceLoraPhy::IDLE:
+      return m_idleCurrentA;
     case EndDeviceLoraPhy::OFF:
       return 0;
     default:
@@ -398,6 +417,9 @@ LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
       break;
     case EndDeviceLoraPhy::RX:
       stateName = "RX";
+      break;
+    case EndDeviceLoraPhy::IDLE:
+      stateName = "IDLE";
       break;
     case EndDeviceLoraPhy::SLEEP:
       stateName = "SLEEP";
@@ -428,6 +450,9 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
       break;
     case EndDeviceLoraPhy::RX:
       energyConsumption = duration.GetSeconds () * m_rxCurrentA * supplyVoltage;
+      break;
+    case EndDeviceLoraPhy::IDLE:
+      energyConsumption = duration.GetSeconds () * m_idleCurrentA * supplyVoltage;
       break;
     case EndDeviceLoraPhy::SLEEP:
       energyConsumption = duration.GetSeconds () * m_sleepCurrentA * supplyVoltage;
@@ -499,6 +524,17 @@ LoraRadioEnergyModelPhyListener::NotifyTxStart (double txPowerDbm)
       NS_FATAL_ERROR ("LoraRadioEnergyModelPhyListener:Change state callback not set!");
     }
   m_changeStateCallback (EndDeviceLoraPhy::TX);
+}
+
+void
+LoraRadioEnergyModelPhyListener::NotifyIdle (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_changeStateCallback.IsNull ())
+    {
+      NS_FATAL_ERROR ("LoraRadioEnergyModelPhyListener:Change state callback not set!");
+    }
+  m_changeStateCallback (EndDeviceLoraPhy::IDLE);
 }
 
 void
