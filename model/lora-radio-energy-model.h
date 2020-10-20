@@ -357,6 +357,8 @@ private:
   uint8_t m_nPendingChangeState; ///< pending state change
   bool m_isSupersededChangeState; ///< superseded change state
 
+  bool m_enterSleepIfDepleted = false; // default: turn off
+
   /// Energy depletion callback
   LoraRadioEnergyDepletionCallback m_energyDepletionCallback;
 

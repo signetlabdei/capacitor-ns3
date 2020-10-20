@@ -20,7 +20,9 @@
 
 #include <algorithm>
 #include "ns3/assert.h"
+#include "ns3/device-energy-model-container.h"
 #include "ns3/end-device-lora-phy.h"
+#include "ns3/lora-radio-energy-model.h"
 #include "ns3/simulator.h"
 #include "ns3/lora-tag.h"
 #include "ns3/log.h"
@@ -120,7 +122,7 @@ EndDeviceLoraPhy::SwitchToSleep (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (!SwitchToOffIfNeeded ())
+  if (!SwitchToKOStateIfNeeded ())
     {
       m_state = SLEEP;
 
@@ -137,7 +139,7 @@ EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (!SwitchToOffIfNeeded ())
+  if (!SwitchToKOStateIfNeeded ())
     {
       m_state = STANDBY;
 
@@ -157,7 +159,7 @@ EndDeviceLoraPhy::SwitchToRx (void)
 
   NS_ASSERT (m_state == STANDBY);
 
-  if (!SwitchToOffIfNeeded ())
+  if (!SwitchToKOStateIfNeeded ())
     {
       m_state = RX;
 
@@ -177,7 +179,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 
   NS_ASSERT (m_state != RX);
 
-  if (!SwitchToOffIfNeeded ())
+  if (!SwitchToKOStateIfNeeded ())
     {
       m_state = TX;
 
@@ -198,7 +200,7 @@ EndDeviceLoraPhy::SwitchToIdle (void)
 
   NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
 
-  if (!SwitchToOffIfNeeded ())
+  if (!SwitchToKOStateIfNeeded ())
     {
       NS_LOG_DEBUG("Actually switching to idle");
       m_state = IDLE;
@@ -259,7 +261,7 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
 
   // TODO Update by quering the energySource / loraradio ?? if going to sleep or off!
 bool
-EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
+EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -287,10 +289,23 @@ EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
   basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowBatteryThreshold);
   double batteryFraction = basicEnergySource->GetEnergyFraction ();
 
+  Ptr<LoraRadioEnergyModel> loraEnergyModel = nodeEnergySource -> FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get (0) -> GetObject<LoraRadioEnergyModel> ();
+  BooleanValue enterSleepIfDepleted;
+  loraEnergyModel->GetAttribute ("EnterSleepIfDepleted", enterSleepIfDepleted);
+
   if (batteryFraction < lowBatteryThreshold.Get ())
     {
-      NS_LOG_DEBUG("Remaining energy lower than the threshold! Switching to OFF mode");
-      SwitchToOff ();
+      if (enterSleepIfDepleted)
+        {
+          NS_LOG_DEBUG ("Remaining energy lower than the threshold! Switching to SLEEP mode");
+          SwitchToSleep ();
+        }
+      else
+      {
+        NS_LOG_DEBUG ("Remaining energy lower than the threshold! Switching to OFF mode");
+        SwitchToOff ();
+      }
+
       return true;
     }
   else
@@ -298,5 +313,6 @@ EndDeviceLoraPhy::SwitchToOffIfNeeded (void)
       return false;
     }
 }
-}
-}
+
+} // lorawan
+} // ns3

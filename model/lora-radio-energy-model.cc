@@ -16,6 +16,7 @@
  */
 
 #include "ns3/assert.h"
+#include "ns3/boolean.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-status.h"
 #include "ns3/log-macros-enabled.h"
@@ -25,6 +26,7 @@
 #include "ns3/pointer.h"
 #include "ns3/energy-source.h"
 #include "lora-radio-energy-model.h"
+#include "src/core/model/boolean.h"
 
 
 namespace ns3 {
@@ -71,13 +73,17 @@ LoraRadioEnergyModel::GetTypeId (void)
                          PointerValue (),
                          MakePointerAccessor (&LoraRadioEnergyModel::m_txCurrentModel),
                          MakePointerChecker<LoraTxCurrentModel> ())
-          .AddTraceSource (
-              "TotalEnergyConsumption", "Total energy consumption of the radio device.",
-              MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
-              "ns3::TracedValueCallback::Double")
-      // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
-      // tracesource
-      ;
+    .AddAttribute("EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
+                  BooleanValue(),
+                  MakeBooleanAccessor(&LoraRadioEnergyModel::m_enterSleepIfDepleted),
+                  MakeBooleanChecker ())
+    .AddTraceSource ("TotalEnergyConsumption",
+                     "Total energy consumption of the radio device.",
+                     MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
+                     "ns3::TracedValueCallback::Double")
+    // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
+    // tracesource
+  ;
   return tid;
 }
 
@@ -320,10 +326,24 @@ void
 LoraRadioEnergyModel::HandleEnergyDepletion (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to OFF mode");
-  // ChangeState(EndDeviceLoraPhy::OFF); // This will be done by the notification
-  Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-  edPhy -> SwitchToOff();
+
+  // TODO Take decision with separate function to have dynamic choice
+
+  if (m_enterSleepIfDepleted)
+    {
+      NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to SLEEP mode");
+      // ChangeState(EndDeviceLoraPhy::OFF); // This will be done by the notification
+      Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+      edPhy->SwitchToSleep ();
+    }
+  else
+    {
+      NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is depleted! Switching to OFF mode");
+      // ChangeState(EndDeviceLoraPhy::OFF); // This will be done by the notification
+      Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+      edPhy->SwitchToOff ();
+    }
+
   // TODO insert event
   // invoke energy depletion callback, if set.
   if (!m_energyDepletionCallback.IsNull ())
