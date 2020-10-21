@@ -69,21 +69,25 @@ LoraRadioEnergyModel::GetTypeId (void)
                          MakeDoubleAccessor (&LoraRadioEnergyModel::SetSleepCurrentA,
                                              &LoraRadioEnergyModel::GetSleepCurrentA),
                          MakeDoubleChecker<double> ())
+          .AddAttribute ("TurnOnEnergy", "Amount of energy to turn on the device from the OFF state [J]",
+                         DoubleValue (0.000001), 
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::m_turnOnEnergy),
+                         MakeDoubleChecker<double> ())
           .AddAttribute ("TxCurrentModel", "A pointer to the attached tx current model.",
                          PointerValue (),
                          MakePointerAccessor (&LoraRadioEnergyModel::m_txCurrentModel),
                          MakePointerChecker<LoraTxCurrentModel> ())
-    .AddAttribute("EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
-                  BooleanValue(),
-                  MakeBooleanAccessor(&LoraRadioEnergyModel::m_enterSleepIfDepleted),
-                  MakeBooleanChecker ())
-    .AddTraceSource ("TotalEnergyConsumption",
-                     "Total energy consumption of the radio device.",
-                     MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
-                     "ns3::TracedValueCallback::Double")
-    // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
-    // tracesource
-  ;
+          .AddAttribute (
+              "EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
+              BooleanValue (), MakeBooleanAccessor (&LoraRadioEnergyModel::m_enterSleepIfDepleted),
+              MakeBooleanChecker ())
+          .AddTraceSource (
+              "TotalEnergyConsumption", "Total energy consumption of the radio device.",
+              MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
+              "ns3::TracedValueCallback::Double")
+      // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
+      // tracesource
+      ;
   return tid;
 }
 
@@ -364,6 +368,10 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged! Turning on the ED");
+
+  // This may have a cost
+  m_totalEnergyConsumption -= m_turnOnEnergy;
+  m_source -> UpdateEnergySource();
 
   // ChangeState (EndDeviceLoraPhy::SLEEP);
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();

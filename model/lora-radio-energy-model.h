@@ -343,6 +343,7 @@ private:
   double m_rxCurrentA; ///< receive current
   double m_idleCurrentA; ///< idle current
   double m_sleepCurrentA; ///< sleep current
+  double m_turnOnEnergy = 0; // energy needed to turn on the device in OFF mode
   // NOTICE VERY WELL: Current  Model linear or constant as possible choices
   Ptr<LoraTxCurrentModel> m_txCurrentModel; ///< current model
 
