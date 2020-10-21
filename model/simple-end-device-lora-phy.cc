@@ -267,6 +267,16 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
   // Automatically switch to Standby in either case
   SwitchToStandby ();
 
+  //TODO Check energy: if depleted do not forward the msg
+  if (SwitchToKOStateIfNeeded())
+    {
+      NS_LOG_INFO ("Packet not correctly received because device run out of energy ");
+      //TODO Add tracesource to save this event
+      // The callback to inform the upper layer is not called
+      return;
+    }
+
+
   // Fire the trace source
   m_phyRxEndTrace (packet);
 

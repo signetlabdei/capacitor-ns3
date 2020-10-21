@@ -221,7 +221,7 @@ EndDeviceLoraPhy::SwitchToOff (void)
 
   if (m_state == OFF)
     {
-      NS_LOG_DEBUG ("Trying to switch to OFF, but the ED is already in OFF! check case");
+      NS_LOG_DEBUG ("Trying to switch to OFF, but the ED is already in OFF!");
       // TODO callback to keep trace of some failure
       return;
     }
