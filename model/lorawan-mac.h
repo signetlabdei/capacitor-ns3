@@ -82,8 +82,10 @@ public:
    * packet we were locked on failed.
    *
    * \param packet the packet we failed to receive
+   * \param lostBecauseInterference if the packet was lost at the PHY layer
+   * because of interference or energy depletion
   */
-  virtual void FailedReception (Ptr<Packet const> packet) = 0;
+  virtual void FailedReception (Ptr<Packet const> packet, bool lostBecauseInterference) = 0;
 
   /**
    * Perform actions after sending a packet.

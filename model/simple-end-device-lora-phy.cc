@@ -271,7 +271,12 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
   if (SwitchToKOStateIfNeeded())
     {
       NS_LOG_INFO ("Packet not correctly received because device run out of energy ");
-      //TODO Add tracesource to save this event
+      // If there is one, perform the callback to inform the upper layer of the
+      // packet lost because of depleted energy
+      if (!m_rxFailedCallback.IsNull ())
+        {
+          m_rxFailedCallback (packet, false);
+        }
       // The callback to inform the upper layer is not called
       return;
     }
@@ -299,10 +304,10 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
         }
 
       // If there is one, perform the callback to inform the upper layer of the
-      // lost packet
+      // packet lost because of interference
       if (!m_rxFailedCallback.IsNull ())
         {
-          m_rxFailedCallback (packet);
+          m_rxFailedCallback (packet, true);
         }
 
     }

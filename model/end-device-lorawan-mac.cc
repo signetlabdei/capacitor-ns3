@@ -371,7 +371,8 @@ EndDeviceLorawanMac::Receive (Ptr<Packet const> packet)
 { }
 
 void
-EndDeviceLorawanMac::FailedReception (Ptr<Packet const> packet)
+EndDeviceLorawanMac::FailedReception (Ptr<Packet const> packet,
+                                      bool lostBecauseInterference)
 { }
 
 void

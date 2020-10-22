@@ -71,7 +71,9 @@ public:
    */
   virtual void Receive (Ptr<Packet const> packet);
 
-  virtual void FailedReception (Ptr<Packet const> packet);
+  /** * \param lostBecauseInterference if the packet was lost at the PHY layer
+  because of interference or energy depletion */
+  virtual void FailedReception (Ptr<Packet const> packet, bool lostBecauseInterference);
 
   /**
    * Perform the actions that are required after a packet send.

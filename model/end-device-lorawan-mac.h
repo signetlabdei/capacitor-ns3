@@ -95,7 +95,8 @@ public:
    */
   virtual void Receive (Ptr<Packet const> packet);
 
-  virtual void FailedReception (Ptr<Packet const> packet);
+  virtual void FailedReception (Ptr<Packet const> packet,
+                                bool lostBecauseInterference);
 
   /**
    * Perform the actions that are required after a packet send.

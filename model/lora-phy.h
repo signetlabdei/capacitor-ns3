@@ -93,8 +93,12 @@ public:
    *
    * This callback can be set by an upper layer that wishes to be informed of
    * failed reception events.
+   * There can be two causes of packet loss at the PHY layer:
+   * 0: reception unsuccessful because energy depleted
+   * 1: reception unsuccessful because of interference
+   * corresponding to the boolean value
    */
-  typedef Callback<void, Ptr<const Packet> > RxFailedCallback;
+  typedef Callback<void, Ptr<const Packet>, bool> RxFailedCallback;
 
   /**
    * Type definition for a callback to call when a packet has finished sending.

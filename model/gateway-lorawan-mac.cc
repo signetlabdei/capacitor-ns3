@@ -136,7 +136,7 @@ GatewayLorawanMac::Receive (Ptr<Packet const> packet)
 }
 
 void
-GatewayLorawanMac::FailedReception (Ptr<Packet const> packet)
+GatewayLorawanMac::FailedReception (Ptr<Packet const> packet, bool lostBecauseInterference)
 {
   NS_LOG_FUNCTION (this << packet);
 }

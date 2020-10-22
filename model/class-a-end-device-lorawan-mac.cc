@@ -239,13 +239,18 @@ ClassAEndDeviceLorawanMac::Receive (Ptr<Packet const> packet)
 }
 
 void
-ClassAEndDeviceLorawanMac::FailedReception (Ptr<Packet const> packet)
+ClassAEndDeviceLorawanMac::FailedReception (Ptr<Packet const> packet,
+                                            bool lostBecauseInterference)
 {
   NS_LOG_FUNCTION (this << packet);
 
-  // Switch to sleep after a failed reception
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
+  if (lostBecauseInterference)
+  {
+    // Switch to sleep after a failed reception
+    m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
+  }
 
+  // If needed, schedule a retransmission
   if (m_secondReceiveWindow.IsExpired () && m_retxParams.waitingAck)
     {
       if (m_retxParams.retxLeft > 0)
