@@ -24,6 +24,7 @@
 #include "ns3/end-device-lorawan-mac.h"
 #include "ns3/assert.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
+#include "ns3/double.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/energy-source.h"
 #include "ns3/lora-radio-energy-model.h"
@@ -264,7 +265,24 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
 
       double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
       NS_LOG_DEBUG ("Remaining energy is " << remainingEnergy);
-      if (remainingEnergy < predictedEnergyConsumption)
+      // // Soluzione 1
+      // if (remainingEnergy < predictedEnergyConsumption)
+      //   {
+      //     NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
+      //     m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
+      //     return;
+      //   }
+      // else
+      //   {
+      //     // Remaining energy is enough. With the transmission we could fall under the battery threshold
+      //     m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
+      //   }
+
+      // Soluzione 2
+      double initialEnergy = nodeEnergySource-> GetInitialEnergy();
+      DoubleValue lowThreshold;
+      nodeEnergySource-> GetAttribute("BasicEnergyLowBatteryThreshold", lowThreshold);
+      if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get()*initialEnergy))
         {
           NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
           m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
@@ -276,6 +294,7 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
           // Remaining energy is enough. With the transmission we could fall under the battery threshold
           m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
         }
+
 
       // Reset MAC command list
       m_macCommandList.clear ();

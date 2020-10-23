@@ -267,7 +267,7 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
   // Automatically switch to Standby in either case
   SwitchToStandby ();
 
-  //TODO Check energy: if depleted do not forward the msg
+  //Check energy: if depleted do not forward the msg
   if (SwitchToKOStateIfNeeded())
     {
       NS_LOG_INFO ("Packet not correctly received because device run out of energy ");

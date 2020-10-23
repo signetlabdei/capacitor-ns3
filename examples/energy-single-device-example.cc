@@ -29,6 +29,8 @@
 #include "ns3/basic-energy-source-helper.h"
 #include "ns3/basic-energy-harvester-helper.h"
 #include "ns3/lora-radio-energy-model-helper.h"
+#include "ns3/network-server-helper.h"
+#include "ns3/forwarder-helper.h"
 #include "ns3/file-helper.h"
 #include "ns3/names.h"
 #include "ns3/config.h"
@@ -44,8 +46,9 @@ using namespace lorawan;
 
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
-std::string filename1 = "remainingEnegy.txt";
-std::string filename2 = "deviceStates.txt";
+std::string filenameRemainingEnergy = "remainingEnegy.txt";
+std::string filenameState = "deviceStates.txt";
+std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
 
 // Callbcks
 
@@ -69,11 +72,32 @@ EnergyDepletionCallback (void)
   NS_LOG_DEBUG("Energy depleted callback in main");
 }
 
-std::string
-CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet, Time time, bool boolValue)
+void
+CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
+                           Time time, bool boolValue)
 {
-  return std::string(std::to_string(time.GetSeconds()) + " " + std::to_string(boolValue));
+  // std::cout << time.GetSeconds () << " "
+  //           << "EnoughEnergy " << std::to_string (boolValue) << std::endl;
+
+  const char *c = filenameEnoughEnergy.c_str ();
+  std::ofstream outputFile;
+  if (Simulator::Now () == Seconds (0))
+    {
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+    }
+  else
+    {
+      // Only append to the file
+      outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
+
+  outputFile << Simulator::Now ().GetSeconds () << " " << boolValue << std::endl;
+
+  outputFile.close ();
+
 }
+
 // void
 // CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet, Time time, bool boolValue)
 // {
@@ -86,7 +110,7 @@ OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::Sta
   NS_LOG_DEBUG ("OnEndDeviceStateChange " << status);
   // std::cout << Simulator::Now().GetSeconds() << " " << status << std::endl;
 
-  const char *c = filename2.c_str ();
+  const char *c = filenameState.c_str ();
   std::ofstream outputFile;
   if (Simulator::Now () == Seconds (0))
     {
@@ -113,19 +137,19 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -134,6 +158,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("LorawanMacHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("OneShotSenderHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
+  // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMacHeader", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraFrameHeader", LOG_LEVEL_ALL);
 
@@ -215,12 +240,18 @@ int main (int argc, char *argv[])
 
   macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
+  // Set message type (Default is unconfirmed)
+  Ptr<LorawanMac> edMac1 =
+      endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ()->GetMac ();
+  Ptr<ClassAEndDeviceLorawanMac> edLorawanMac1 = edMac1->GetObject<ClassAEndDeviceLorawanMac> ();
+  edLorawanMac1->SetMType (LorawanMacHeader::CONFIRMED_DATA_UP);
+
   /*********************************************
    *  Install applications on the end devices  *
    *********************************************/
 
   PeriodicSenderHelper periodicSenderHelper;
-  periodicSenderHelper.SetPeriod (Seconds (15));
+  periodicSenderHelper.SetPeriod (Seconds (10));
 
   periodicSenderHelper.Install (endDevices);
 
@@ -232,9 +263,9 @@ int main (int argc, char *argv[])
   LoraRadioEnergyModelHelper radioEnergyHelper;
 
   // configure energy source
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.06)); // Energy in J
+  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.1)); // Energy in J 0.006
   basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
-  basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.1));
+  basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.01));
   basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.3));
   basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(20)));
 
@@ -271,10 +302,11 @@ int main (int argc, char *argv[])
       (endDevicesNetDevices, sources);
 
   // install harvester on the energy source
-  EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
+  // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
 
-  Names::Add("Names/EnergyHarvester", harvesters.Get (0));
-  Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
+  // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
+  // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
+
   // myHarvester -> TraceConnectWithoutContext("TotalEnergyHarvested",
   //                                           MakeCallback(&OnEnergyHarvested));
 
@@ -283,16 +315,35 @@ int main (int argc, char *argv[])
   Ptr<LoraNetDevice> loraDevice = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLorawanMac> myEDmac = loraDevice->GetMac ()->GetObject<EndDeviceLorawanMac> ();
   Ptr<EndDeviceLoraPhy> myEDphy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-  // myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx", MakeCallback(&CheckEnoughEnergyCallback));
-  myEDphy -> TraceConnectWithoutContext("EndDeviceState", MakeCallback (&OnEndDeviceStateChange));
+  myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx",
+                                       MakeCallback(&CheckEnoughEnergyCallback));
+  myEDphy -> TraceConnectWithoutContext("EndDeviceState",
+                                        MakeCallback (&OnEndDeviceStateChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
                                           MakeCallback (&OnRemainingEnergyChange));
+
+  ////////////
+  // Create NS
+  ////////////
+
+  NodeContainer networkServers;
+  networkServers.Create (1);
+
+  // Install the NetworkServer application on the network server
+  NetworkServerHelper networkServerHelper;
+  networkServerHelper.SetGateways (gateways);
+  networkServerHelper.SetEndDevices (endDevices);
+  networkServerHelper.Install (networkServers);
+
+  // Install the Forwarder application on the gateways
+  ForwarderHelper forwarderHelper;
+  forwarderHelper.Install (gateways);
 
   /****************
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (125));
+  Simulator::Stop (Seconds (200));
 
   Simulator::Run ();
 
