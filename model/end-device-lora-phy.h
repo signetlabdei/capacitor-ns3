@@ -32,7 +32,7 @@
 #include "ns3/lora-phy.h"
 #include "ns3/energy-source.h"
 #include "ns3/basic-energy-source.h"
-
+#include "ns3/capacitor-energy-source.h"
 
 namespace ns3 {
 namespace lorawan {

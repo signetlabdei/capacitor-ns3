@@ -70,7 +70,7 @@ LoraRadioEnergyModel::GetTypeId (void)
                                              &LoraRadioEnergyModel::GetSleepCurrentA),
                          MakeDoubleChecker<double> ())
           .AddAttribute ("TurnOnEnergy", "Amount of energy to turn on the device from the OFF state [J]",
-                         DoubleValue (0.000001), 
+                         DoubleValue (0.000001),
                          MakeDoubleAccessor (&LoraRadioEnergyModel::m_turnOnEnergy),
                          MakeDoubleChecker<double> ())
           .AddAttribute ("TxCurrentModel", "A pointer to the attached tx current model.",
@@ -94,7 +94,7 @@ LoraRadioEnergyModel::GetTypeId (void)
 LoraRadioEnergyModel::LoraRadioEnergyModel ()
 {
   NS_LOG_FUNCTION (this);
-  m_currentState = EndDeviceLoraPhy::OFF;      // initially OFF
+  m_currentState = EndDeviceLoraPhy::SLEEP;       // initially SLEEP
   m_device = NULL;
   m_lastUpdateTime = Seconds (0.0);
   m_nPendingChangeState = 0;
@@ -294,6 +294,7 @@ LoraRadioEnergyModel::ChangeState (int newState)
     {
       // update current state & last update time stamp
       SetLoraRadioState ((EndDeviceLoraPhy::State) newState);
+      NS_LOG_DEBUG("[DEBUG] Set a new state");
 
       // // Also update PHY
       // Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
@@ -410,6 +411,7 @@ double
 LoraRadioEnergyModel::DoGetCurrentA (void) const
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG("[DEBUG] current state: "<< m_currentState );
   switch (m_currentState)
     {
     case EndDeviceLoraPhy::STANDBY:
@@ -466,6 +468,7 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
   NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
 
   double energyConsumption = 0;
+  // double supplyVoltage = m_source->GetSupplyVoltage ();
   double supplyVoltage = m_source->GetSupplyVoltage ();
 
   switch (status)
@@ -552,6 +555,7 @@ LoraRadioEnergyModelPhyListener::NotifyTxStart (double txPowerDbm)
       NS_FATAL_ERROR ("LoraRadioEnergyModelPhyListener:Change state callback not set!");
     }
   m_changeStateCallback (EndDeviceLoraPhy::TX);
+  NS_LOG_DEBUG("ChangeState callback called");
 }
 
 void

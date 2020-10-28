@@ -5,7 +5,9 @@
  */
 
 #include "ns3/basic-energy-harvester.h"
+#include "ns3/boolean.h"
 #include "ns3/callback.h"
+#include "ns3/double.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-lorawan-mac.h"
 #include "ns3/energy-harvester-container.h"
@@ -15,6 +17,7 @@
 #include "ns3/lora-net-device.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/nstime.h"
+#include "ns3/object.h"
 #include "ns3/packet.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
@@ -35,6 +38,8 @@
 #include "ns3/names.h"
 #include "ns3/config.h"
 #include "ns3/string.h"
+#include "src/lorawan/model/capacitor-energy-source.h"
+#include "src/lorawan/model/lora-tx-current-model.h"
 #include <algorithm>
 #include <ctime>
 #include <iostream>
@@ -49,6 +54,8 @@ NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 std::string filenameRemainingEnergy = "remainingEnegy.txt";
 std::string filenameState = "deviceStates.txt";
 std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
+bool enoughEnergyCallbackFirstCall = true;
+bool stateChangeCallbackFirstCall = true;
 
 // Callbcks
 
@@ -56,8 +63,16 @@ void
 OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
 {
   // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingEnergy);
-  std::cout << Simulator::Now().GetSeconds() << " " << remainingEnergy << std::endl;
+  // std::cout << Simulator::Now().GetSeconds() << " " << remainingEnergy << std::endl;
   // return std::to_string(Simulator::Now().GetSeconds()) + " " + std::to_string(remainingEnergy)
+}
+
+void
+OnRemainingVoltageChange (double oldRemainingVoltage, double remainingVoltage)
+{
+  // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingVoltage);
+  std::cout << Simulator::Now ().GetMilliSeconds () << " " << remainingVoltage << std::endl;
+  // return std::to_string(Simulator::Now().GetSeconds()) + " " + std::to_string(remainingVoltage)
 }
 
 void OnEnergyHarvested (double oldvalue, double totalEnergyHarvested)
@@ -81,10 +96,11 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
 
   const char *c = filenameEnoughEnergy.c_str ();
   std::ofstream outputFile;
-  if (Simulator::Now () == Seconds (0))
+  if (enoughEnergyCallbackFirstCall)
     {
       // Delete contents of the file as it is opened
       outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      enoughEnergyCallbackFirstCall = false;
     }
   else
     {
@@ -107,43 +123,54 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
 void
 OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::State status)
 {
-  NS_LOG_DEBUG ("OnEndDeviceStateChange " << status);
+  // NS_LOG_DEBUG ("OnEndDeviceStateChange " << status);
   // std::cout << Simulator::Now().GetSeconds() << " " << status << std::endl;
 
   const char *c = filenameState.c_str ();
   std::ofstream outputFile;
-  if (Simulator::Now () == Seconds (0))
+  if (stateChangeCallbackFirstCall)
     {
       // Delete contents of the file as it is opened
       outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      // Set the initial sleep state
+      outputFile << 0 << " " << 0 << std::endl;
+      NS_LOG_DEBUG ("Append initial state inside the callback");
+      stateChangeCallbackFirstCall = false;
     }
-  else
-    {
-      // Only append to the file
-      outputFile.open (c, std::ofstream::out | std::ofstream::app);
-    }
+  {
+    // Only append to the file
+    outputFile.open (c, std::ofstream::out | std::ofstream::app);
+  }
 
-  outputFile << Simulator::Now ().GetSeconds () << " " << status
-             << std::endl;
+  outputFile << Simulator::Now ().GetSeconds () << " " << status << std::endl;
 
   outputFile.close ();
 }
 
+double capacity = 0.006;
+double simTime = 100;
+double appPeriod = 10;
 
 int main (int argc, char *argv[])
 {
 
   // Inputs
+  CommandLine cmd;
+  cmd.AddValue ("capacity", "Capacity", capacity);
+  cmd.AddValue ("simTime", "Simulation time [s]", simTime);
+  cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
+  cmd.Parse (argc, argv);
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
@@ -251,7 +278,7 @@ int main (int argc, char *argv[])
    *********************************************/
 
   PeriodicSenderHelper periodicSenderHelper;
-  periodicSenderHelper.SetPeriod (Seconds (10));
+  periodicSenderHelper.SetPeriod (Seconds (appPeriod));
 
   periodicSenderHelper.Install (endDevices);
 
@@ -259,24 +286,33 @@ int main (int argc, char *argv[])
    * Install Energy Model *
    ************************/
 
-  BasicEnergySourceHelper basicSourceHelper;
-  LoraRadioEnergyModelHelper radioEnergyHelper;
 
   // configure energy source
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.1)); // Energy in J 0.006
-  basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
-  basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.01));
-  basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.3));
-  basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(20)));
+  // BasicEnergySourceHelper basicSourceHelper;
+  // basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.1)); // Energy in J 0.006
+  // basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
+  // basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.01));
+  // basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.3));
+  // basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(20)));
 
-  radioEnergyHelper.Set ("StandbyCurrentA", DoubleValue (0.0014));
-  // radioEnergyHelper.Set ("StandbyCurrentA", DoubleValue (0.01));
-  radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.0000015));
-  // radioEnergyHelper.Set ("SleepCurrentA", DoubleValue (0.002));
-  radioEnergyHelper.Set ("RxCurrentA", DoubleValue (0.0112));
+  // CapacitorEnergySource
+  Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
+  capacitor->SetAttribute ("Capacity", DoubleValue(capacity));
+  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.3));
+  capacitor-> SetAttribute ("CapacitorEnergySourceInitialEnergyJ",
+                          DoubleValue (3));
+  capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(200)));
 
-  radioEnergyHelper.SetTxCurrentModel ("ns3::ConstantLoraTxCurrentModel",
-                                       "TxCurrent", DoubleValue (0.028));
+  Ptr<LoraRadioEnergyModel> radioEnergy = CreateObject<LoraRadioEnergyModel>();
+  radioEnergy-> SetAttribute ("StandbyCurrentA", DoubleValue (0.0014));
+  // radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.01));
+  radioEnergy-> SetAttribute ("SleepCurrentA", DoubleValue (0.0000015));
+  // radioEnergy.Set ("SleepCurrentA", DoubleValue (0.002));
+  radioEnergy-> SetAttribute ("RxCurrentA", DoubleValue (0.0112));
+  radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(true));
+
+  Ptr<ConstantLoraTxCurrentModel> constantloratx;
+  radioEnergy-> SetTxCurrentModel (constantloratx);
   // radioEnergyHelper.SetEnergyDepletionCallback(MakeCallback(&EnergyDepletionCallback));
 
   //  // Energy harvesting
@@ -294,12 +330,22 @@ int main (int argc, char *argv[])
   harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
   // install source on EDs' nodes
-  EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
-  Names::Add ("/Names/EnergySource", sources.Get (0));
-
+  // EnergySourceContainer sources = basicSourceHelper.Install (endDevices);
   // install device model
-  DeviceEnergyModelContainer deviceModels = radioEnergyHelper.Install
-      (endDevicesNetDevices, sources);
+  // DeviceEnergyModelContainer deviceModels =
+  // radioEnergyHelper.Install (endDevicesNetDevices, sources);
+
+  capacitor->SetNode(endDevices.Get(0));
+  ObjectFactory fac;
+  fac.SetTypeId ("ns3::EnergySourceContainer");
+  Ptr<EnergySourceContainer> energyContainer = fac.Create<EnergySourceContainer> ();
+  energyContainer->Add (capacitor);
+  endDevices.Get(0)->AggregateObject (energyContainer);
+  radioEnergy->SetEnergySource(capacitor);
+  capacitor->AppendDeviceEnergyModel(radioEnergy);
+
+  Names::Add ("/Names/EnergySource", capacitor);
+
 
   // install harvester on the energy source
   // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
@@ -315,12 +361,20 @@ int main (int argc, char *argv[])
   Ptr<LoraNetDevice> loraDevice = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLorawanMac> myEDmac = loraDevice->GetMac ()->GetObject<EndDeviceLorawanMac> ();
   Ptr<EndDeviceLoraPhy> myEDphy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
+
+
+  // For the capacitor without helper also connect the listener!!
+  myEDphy-> RegisterListener(radioEnergy-> GetPhyListener());
+  radioEnergy-> SetLoraNetDevice(loraDevice);
+
   myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx",
                                        MakeCallback(&CheckEnoughEnergyCallback));
   myEDphy -> TraceConnectWithoutContext("EndDeviceState",
                                         MakeCallback (&OnEndDeviceStateChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
                                           MakeCallback (&OnRemainingEnergyChange));
+  ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
+                                      MakeCallback (&OnRemainingVoltageChange));
 
   ////////////
   // Create NS
@@ -343,11 +397,40 @@ int main (int argc, char *argv[])
   *  Simulation  *
   ****************/
 
-  Simulator::Stop (Seconds (200));
+  Simulator::Stop (Seconds (simTime));
 
   Simulator::Run ();
+
+  NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);
+  // Fix output files if not created
+  if (stateChangeCallbackFirstCall)
+    {
+      const char *c = filenameState.c_str ();
+      std::ofstream outputFile;
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      // Set the initial sleep state
+      outputFile << 0 << " " << 0 << std::endl;
+      NS_LOG_DEBUG ("Append initial state");
+      stateChangeCallbackFirstCall = false;
+      outputFile.close ();
+    }
+
+  // if (enoughEnergyCallbackFirstCall)
+  //   {
+  //     const char *c = filenameEnoughEnergy.c_str ();
+  //     std::ofstream outputFile;
+  //     // Delete contents of the file as it is opened
+  //     outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+  //     // Set the initial sleep state
+  //     outputFile << 0 << " " << 0 << std::endl;
+  //     NS_LOG_DEBUG ("Append initially not enough energy, because never called");
+  //     stateChangeCallbackFirstCall = false;
+  //     outputFile.close ();
+  //   }
 
   Simulator::Destroy ();
 
   return 0;
+
 }

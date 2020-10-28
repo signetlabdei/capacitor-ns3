@@ -232,16 +232,20 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       LorawanMacHeader macHdr;
       ApplyNecessaryOptions (macHdr);
       packet->AddHeader (macHdr);
-      Ptr<EnergySource> nodeEnergySource = m_device->GetNode()->GetObject<EnergySourceContainer>()->Get(0);
-      NS_ASSERT(!(nodeEnergySource == 0));
-      // if (nodeEnergySource == 0)
-      //   {
-      //     NS_LOG_DEBUG("Null pointer");
-      //   }
-      // else
-      //   {
-      //     NS_LOG_DEBUG("Pointer ok!");
-      //   }
+      // NS_ASSERT(!(nodeEnergySource == 0));
+      // TODO
+      // TOFIX The node does not have a pointer to the energy sources
+      // It was set by the helper maybe
+      Ptr<EnergySource> nodeEnergySource =
+          m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
+      if (nodeEnergySource == 0)
+        {
+          NS_LOG_DEBUG("Null pointer");
+        }
+      else
+        {
+          NS_LOG_DEBUG("Pointer ok!");
+        }
 
       // Predict energy consumption to decide if we can transmit
       // Craft LoraTxParameters object
@@ -281,8 +285,12 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       // Soluzione 2
       double initialEnergy = nodeEnergySource-> GetInitialEnergy();
       DoubleValue lowThreshold;
-      nodeEnergySource-> GetAttribute("BasicEnergyLowBatteryThreshold", lowThreshold);
-      if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get()*initialEnergy))
+      // If BasicEnergySource
+      // nodeEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowThreshold);
+      // If capacitor energy source
+      nodeEnergySource->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
+
+      if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get () * initialEnergy))
         {
           NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
           m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);

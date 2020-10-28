@@ -12,6 +12,7 @@
  *
  * Authors: Romagnolo Stefano <romagnolostefano93@gmail.com>
  *          Davide Magrin <magrinda@dei.unipd.it>
+ *          Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #ifndef LORA_RADIO_ENERGY_MODEL_H

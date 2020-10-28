@@ -122,6 +122,12 @@ EndDeviceLoraPhy::SwitchToSleep (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
+  if (m_state == SLEEP)
+    {
+      NS_LOG_DEBUG ("Device already in SLEEP state");
+      return;
+    }
+
   if (!SwitchToKOStateIfNeeded ())
     {
       m_state = SLEEP;
@@ -186,6 +192,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
       // Notify listeners of the state change
       for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
         {
+          NS_LOG_DEBUG("Notify tx start");
           (*i)->NotifyTxStart (txPowerDbm);
         }
     }
@@ -265,7 +272,8 @@ EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
 {
   NS_LOG_FUNCTION (this);
 
-  // TODO Insert assert?
+  bool switchToKOState = false;
+
   // TODO We could take the state which should be set as input, and than call the corresponding callback
   // TODO Insert Callback if we interrupt a TX or RX
 
@@ -274,26 +282,43 @@ EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
   if (nodeEnergySource == 0)
     {
       NS_LOG_DEBUG ("Energy Source not found: returning false");
-      return false;
+      return switchToKOState;
     }
 
-  Ptr<BasicEnergySource> basicEnergySource = nodeEnergySource->GetObject<BasicEnergySource> ();
-
-  if (basicEnergySource == 0)
-    {
-      NS_LOG_DEBUG("Basic Energy Source not found: returning false");
-      return false;
-    }
-
-  DoubleValue lowBatteryThreshold;
-  basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowBatteryThreshold);
-  double batteryFraction = basicEnergySource->GetEnergyFraction ();
-
-  Ptr<LoraRadioEnergyModel> loraEnergyModel = nodeEnergySource -> FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get (0) -> GetObject<LoraRadioEnergyModel> ();
+  Ptr<LoraRadioEnergyModel> loraEnergyModel =
+      nodeEnergySource->FindDeviceEnergyModels ("ns3::LoraRadioEnergyModel")
+          .Get (0)
+          ->GetObject<LoraRadioEnergyModel> ();
   BooleanValue enterSleepIfDepleted;
   loraEnergyModel->GetAttribute ("EnterSleepIfDepleted", enterSleepIfDepleted);
 
-  if (batteryFraction < lowBatteryThreshold.Get ())
+  double fraction;
+
+  // If BasicEnergySource
+  Ptr<BasicEnergySource> basicEnergySource = nodeEnergySource->GetObject<BasicEnergySource> ();
+  if (!(basicEnergySource == 0))
+    {
+      NS_LOG_DEBUG("found basicEnergySource pointer");
+      DoubleValue lowBatteryThreshold;
+      basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowBatteryThreshold);
+      fraction = basicEnergySource->GetEnergyFraction ();
+      switchToKOState = fraction < lowBatteryThreshold.Get ();
+    }
+
+  // If CapacitorEnergySource
+  Ptr<CapacitorEnergySource> capacitorEnergySource = nodeEnergySource->GetObject<CapacitorEnergySource> ();
+  if (!(capacitorEnergySource == 0))
+    {
+      NS_LOG_DEBUG ("found capacitorEnergySource pointer");
+      DoubleValue lowVoltageThreshold;
+      capacitorEnergySource->GetAttribute ("CapacitorLowVoltageThreshold", lowVoltageThreshold);
+      fraction = capacitorEnergySource->GetVoltageFraction ();
+      switchToKOState = fraction < lowVoltageThreshold.Get ();
+    }
+
+  // With BasicEnergySource or CapacitorEnergySource we have verified that we
+  // need to enter the KO state
+  if (switchToKOState)
     {
       if (enterSleepIfDepleted)
         {
