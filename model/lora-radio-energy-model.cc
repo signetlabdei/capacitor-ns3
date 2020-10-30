@@ -17,6 +17,7 @@
 
 #include "ns3/assert.h"
 #include "ns3/boolean.h"
+#include "ns3/capacitor-energy-source.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-status.h"
 #include "ns3/log-macros-enabled.h"
@@ -469,24 +470,33 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
 
   double energyConsumption = 0;
   // double supplyVoltage = m_source->GetSupplyVoltage ();
-  double supplyVoltage = m_source->GetSupplyVoltage ();
+  double voltage;
+  Ptr<CapacitorEnergySource> capacitor = m_source -> GetObject<CapacitorEnergySource>();
+  if (!(capacitor == 0))
+    {
+      voltage = capacitor->GetActualVoltage ();
+    }
+  else
+      {
+        voltage = m_source->GetSupplyVoltage ();
+      }
 
   switch (status)
     {
     case EndDeviceLoraPhy::STANDBY:
-      energyConsumption = duration.GetSeconds () * m_idleCurrentA * supplyVoltage;
+      energyConsumption = duration.GetSeconds () * m_idleCurrentA * voltage;
       break;
     case EndDeviceLoraPhy::TX:
-      energyConsumption = duration.GetSeconds () * m_txCurrentA * supplyVoltage;
+      energyConsumption = duration.GetSeconds () * m_txCurrentA * voltage;
       break;
     case EndDeviceLoraPhy::RX:
-      energyConsumption = duration.GetSeconds () * m_rxCurrentA * supplyVoltage;
+      energyConsumption = duration.GetSeconds () * m_rxCurrentA * voltage;
       break;
     case EndDeviceLoraPhy::IDLE:
-      energyConsumption = duration.GetSeconds () * m_idleCurrentA * supplyVoltage;
+      energyConsumption = duration.GetSeconds () * m_idleCurrentA * voltage;
       break;
     case EndDeviceLoraPhy::SLEEP:
-      energyConsumption = duration.GetSeconds () * m_sleepCurrentA * supplyVoltage;
+      energyConsumption = duration.GetSeconds () * m_sleepCurrentA * voltage;
       break;
     case EndDeviceLoraPhy::OFF:
       energyConsumption = 0;

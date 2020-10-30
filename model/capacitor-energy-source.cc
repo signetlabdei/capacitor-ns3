@@ -164,14 +164,13 @@ CapacitorEnergySource::GetUpdateInterval (void) const
   NS_LOG_FUNCTION (this);
   return m_updateInterval;
 }
-
 double
 CapacitorEnergySource::GetSupplyVoltage (void) const
 {
   NS_LOG_FUNCTION (this);
-  // return m_supplyVoltageV;
-  return m_actualVoltageV;
+  return m_supplyVoltageV;
 }
+
 
 double
 CapacitorEnergySource::GetInitialVoltage (void) const
