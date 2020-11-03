@@ -140,6 +140,10 @@ SimpleEndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
       NS_LOG_INFO ("Dropping packet because device is in OFF state");
       break;
     }
+    case TURNON: {
+      NS_LOG_INFO ("Dropping packet because turning on the device");
+      break;
+    }
     case SLEEP: {
       NS_LOG_INFO ("Dropping packet because device is in SLEEP state");
       break;

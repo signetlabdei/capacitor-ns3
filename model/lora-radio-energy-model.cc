@@ -71,14 +71,23 @@ LoraRadioEnergyModel::GetTypeId (void)
                          MakeDoubleAccessor (&LoraRadioEnergyModel::SetSleepCurrentA,
                                              &LoraRadioEnergyModel::GetSleepCurrentA),
                          MakeDoubleChecker<double> ())
-          .AddAttribute ("TurnOnEnergy", "Amount of energy to turn on the device from the OFF state [J]",
-                         DoubleValue (0.000001),
-                         MakeDoubleAccessor (&LoraRadioEnergyModel::m_turnOnEnergy),
+          .AddAttribute ("TurnOnCurrentA", "The radio TurnOn current in Ampere.",
+                         DoubleValue (0.0221), // turnOn mode = 22.1 mA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetTurnOnCurrentA,
+                                             &LoraRadioEnergyModel::GetTurnOnCurrentA),
                          MakeDoubleChecker<double> ())
+          .AddAttribute (
+              "TurnOnDuration", "Amount of time to turn on the device from the OFF state [s]",
+              TimeValue (Seconds (13)), MakeTimeAccessor (&LoraRadioEnergyModel::m_turnOnDuration),
+              MakeTimeChecker ())
           .AddAttribute ("TxCurrentModel", "A pointer to the attached tx current model.",
                          PointerValue (),
                          MakePointerAccessor (&LoraRadioEnergyModel::m_txCurrentModel),
                          MakePointerChecker<LoraTxCurrentModel> ())
+          .AddAttribute ("ReferenceVoltage", "The reference voltage used to compute the load [V]",
+                         DoubleValue (3.3),
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::m_referenceVoltage),
+                         MakeDoubleChecker<double> ())
           .AddAttribute (
               "EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
               BooleanValue (), MakeBooleanAccessor (&LoraRadioEnergyModel::m_enterSleepIfDepleted),
@@ -210,8 +219,22 @@ LoraRadioEnergyModel::SetSleepCurrentA (double sleepCurrentA)
   m_sleepCurrentA = sleepCurrentA;
 }
 
-EndDeviceLoraPhy::State
-LoraRadioEnergyModel::GetCurrentState (void) const
+double
+LoraRadioEnergyModel::GetTurnOnCurrentA (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_turnOnCurrentA;
+}
+
+void
+LoraRadioEnergyModel::SetTurnOnCurrentA (double turnOnCurrentA)
+{
+  NS_LOG_FUNCTION (this << turnOnCurrentA);
+  m_turnOnCurrentA = turnOnCurrentA;
+}
+
+    EndDeviceLoraPhy::State
+    LoraRadioEnergyModel::GetCurrentState (void) const
 {
   NS_LOG_FUNCTION (this);
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
@@ -232,16 +255,25 @@ LoraRadioEnergyModel::GetLoad (EndDeviceLoraPhy::State status)
     {
     case EndDeviceLoraPhy::STANDBY:
       current =  m_idleCurrentA;
+      break;
     case EndDeviceLoraPhy::TX:
       current =  m_txCurrentA;
+      break;
     case EndDeviceLoraPhy::RX:
       current =  m_rxCurrentA;
+      break;
     case EndDeviceLoraPhy::SLEEP:
       current =  m_sleepCurrentA;
+      break;
     case EndDeviceLoraPhy::IDLE:
       current =  m_idleCurrentA;
+      break;
     case EndDeviceLoraPhy::OFF:
       current =  0;
+      break;
+    case EndDeviceLoraPhy::TURNON:
+      current = m_turnOnCurrentA;
+      break;
     default:
       NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << status);
     }
@@ -401,12 +433,12 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged! Turning on the ED");
 
   // This may have a cost
-  m_totalEnergyConsumption -= m_turnOnEnergy;
   m_source -> UpdateEnergySource();
 
   // ChangeState (EndDeviceLoraPhy::SLEEP);
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-  edPhy->SwitchToSleep ();
+  edPhy->SwitchToTurnOn ();
+  Simulator::Schedule (m_turnOnDuration, &EndDeviceLoraPhy::SwitchToSleep, edPhy);
 
   // TODO insert event
   NS_LOG_DEBUG("TODO: Update tracker");
@@ -456,6 +488,8 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
       return m_idleCurrentA;
     case EndDeviceLoraPhy::OFF:
       return 0;
+    case EndDeviceLoraPhy::TURNON:
+      return m_turnOnCurrentA;
     default:
       NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << m_currentState);
     }
@@ -486,13 +520,16 @@ LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
       break;
     case EndDeviceLoraPhy::OFF:
       stateName = "OFF";
+    case EndDeviceLoraPhy::TURNON:
+      stateName = "TURNON";
     }
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Switching to state: " << stateName <<
                 " at time = " << Simulator::Now ().GetSeconds () << " s");
 }
 
 double
-LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State status, Time duration)
+LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State status,
+                                                    Time duration)
 {
   NS_LOG_FUNCTION(this);
   NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
@@ -622,20 +659,31 @@ LoraRadioEnergyModelPhyListener::NotifyOff (void)
   m_changeStateCallback (EndDeviceLoraPhy::OFF);
 }
 
-/*
- * Private function state here.
- */
-
 void
-LoraRadioEnergyModelPhyListener::SwitchToStandby (void)
+LoraRadioEnergyModelPhyListener::NotifyTurnOn (void)
 {
   NS_LOG_FUNCTION (this);
   if (m_changeStateCallback.IsNull ())
     {
       NS_FATAL_ERROR ("LoraRadioEnergyModelPhyListener:Change state callback not set!");
     }
-  m_changeStateCallback (EndDeviceLoraPhy::STANDBY);
+  m_changeStateCallback (EndDeviceLoraPhy::TURNON);
 }
+
+/*
+ * Private function state here.
+ */
+
+// void
+// LoraRadioEnergyModelPhyListener::SwitchToStandby (void)
+// {
+//   NS_LOG_FUNCTION (this);
+//   if (m_changeStateCallback.IsNull ())
+//     {
+//       NS_FATAL_ERROR ("LoraRadioEnergyModelPhyListener:Change state callback not set!");
+//     }
+//   m_changeStateCallback (EndDeviceLoraPhy::STANDBY);
+// }
 
 } // namespace lorawan
 } // namespace ns3

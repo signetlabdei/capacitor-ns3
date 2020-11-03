@@ -38,6 +38,7 @@
 #include "ns3/names.h"
 #include "ns3/config.h"
 #include "ns3/string.h"
+#include "src/core/model/config.h"
 #include "src/lorawan/model/capacitor-energy-source.h"
 #include "src/lorawan/model/lora-tx-current-model.h"
 #include <algorithm>
@@ -65,6 +66,12 @@ OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
   // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingEnergy);
   // std::cout << Simulator::Now().GetSeconds() << " " << remainingEnergy << std::endl;
   // return std::to_string(Simulator::Now().GetSeconds()) + " " + std::to_string(remainingEnergy)
+}
+
+void
+OnDeviceEnergyConsumption (double oldvalue, double energyConsumption)
+{
+  // TODO
 }
 
 void
@@ -375,6 +382,8 @@ int main (int argc, char *argv[])
                                           MakeCallback (&OnRemainingEnergyChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
                                       MakeCallback (&OnRemainingVoltageChange));
+  radioEnergy->TraceConnectWithoutContext("TotalEnergyConsumption",
+                                          MakeCallback(&OnDeviceEnergyConsumption));
 
   ////////////
   // Create NS

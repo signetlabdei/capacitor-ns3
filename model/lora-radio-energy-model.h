@@ -96,11 +96,13 @@ public:
    */
   void NotifyOff (void);
 
+  void NotifyTurnOn (void);
+
 private:
-  /**
-   * A helper function that makes scheduling m_changeStateCallback possible.
-   */
-  void SwitchToStandby (void);
+  // /**
+  //  * A helper function that makes scheduling m_changeStateCallback possible.
+  //  */
+  // void SwitchToStandby (void);
 
   /**
    * Change state callback used to notify the LoraRadioEnergyModel of a state
@@ -180,70 +182,23 @@ public:
   double GetTotalEnergyConsumption (void) const;
 
   // Setter & getters for state power consumption.
-  /**
-   * \brief Gets standby current.
-   *
-   * \returns standby current of the lora device.
-   */
   double GetStandbyCurrentA (void) const;
-  /**
-   * \brief Sets standby current.
-   *
-   * \param standbyCurrentA the standby current
-   */
   void SetStandbyCurrentA (double idleCurrentA);
 
-  /**
-   * \brief Gets transmit current.
-   *
-   * \returns transmit current of the lora device.
-   */
   double GetTxCurrentA (void) const;
-  /**
-   * \brief Sets transmit current.
-   *
-   * \param txCurrentA the transmit current
-   */
   void SetTxCurrentA (double txCurrentA);
 
-  /**
-   * \brief Gets receive current.
-   *
-   * \returns receive current of the lora device.
-   */
   double GetRxCurrentA (void) const;
-  /**
-   * \brief Sets receive current.
-   *
-   * \param rxCurrentA the receive current
-   */
   void SetRxCurrentA (double rxCurrentA);
 
-  /**
-   * \brief Gets idle current.
-   *
-   * \returns idle current of the lora device.
-   */
   double GetIdleCurrentA (void) const;
-  /**
-   * \brief Sets idle current.
-   *
-   * \param idleCurrentA the idle current
-   */
   void SetIdleCurrentA (double idleCurrentA);
 
-  /**
-   * \brief Gets sleep current.
-   *
-   * \returns sleep current of the lora device.
-   */
   double GetSleepCurrentA (void) const;
-  /**
-   * \brief Sets sleep current.
-   *
-   * \param sleepCurrentA the sleep current
-   */
   void SetSleepCurrentA (double sleepCurrentA);
+
+  double GetTurnOnCurrentA (void) const;
+  void SetTurnOnCurrentA (double turnOnCurrentA);
 
   /**
    * Compute the load for a status using the reference voltage
@@ -350,7 +305,9 @@ private:
   double m_rxCurrentA; ///< receive current
   double m_idleCurrentA; ///< idle current
   double m_sleepCurrentA; ///< sleep current
-  double m_turnOnEnergy = 0; // energy needed to turn on the device in OFF mode
+  double m_turnOnCurrentA; // current when turning on
+  double m_referenceVoltage; // used with the current to determine the load
+  Time m_turnOnDuration;
   // NOTICE VERY WELL: Current  Model linear or constant as possible choices
   Ptr<LoraTxCurrentModel> m_txCurrentModel; ///< current model
 

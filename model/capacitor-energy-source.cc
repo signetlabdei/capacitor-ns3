@@ -164,6 +164,7 @@ CapacitorEnergySource::GetUpdateInterval (void) const
   NS_LOG_FUNCTION (this);
   return m_updateInterval;
 }
+
 double
 CapacitorEnergySource::GetSupplyVoltage (void) const
 {

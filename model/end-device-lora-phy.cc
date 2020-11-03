@@ -242,6 +242,26 @@ EndDeviceLoraPhy::SwitchToOff (void)
     }
 }
 
+void
+EndDeviceLoraPhy::SwitchToTurnOn (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG (m_state == OFF, "Trying to turn on, but device is not in OFF!");
+
+  if (!(SwitchToKOStateIfNeeded ()))
+    // We won't need to enter in KO state, but this updates the energy source
+    {
+      m_state = TURNON;
+    }
+
+  // Notify listeners of the state change
+  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+    {
+      (*i)->NotifyTurnOn ();
+    }
+}
+
 EndDeviceLoraPhy::State
 EndDeviceLoraPhy::GetState (void)
 {

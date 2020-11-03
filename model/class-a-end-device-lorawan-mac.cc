@@ -337,6 +337,10 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
       NS_ABORT_MSG ("PHY was in IDLE mode when attempting to "
                     << "close a receive window (which was not opened).");
       break;
+    case EndDeviceLoraPhy::TURNON:
+      NS_ABORT_MSG ("PHY was TURNING ON, when attempting to "
+                    << "close a receive window (which was not opened).");
+      break;
     case EndDeviceLoraPhy::RX:
       // PHY is receiving: let it finish. The Receive method will switch it back to SLEEP.
       break;
@@ -411,6 +415,10 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
       break;
     case EndDeviceLoraPhy::IDLE:
       NS_ABORT_MSG ("PHY was in IDLE mode when attempting to "
+                    << "close a receive window (which was not opened).");
+      break;
+    case EndDeviceLoraPhy::TURNON:
+      NS_ABORT_MSG ("PHY was TURNING ON, when attempting to "
                     << "close a receive window (which was not opened).");
       break;
     case EndDeviceLoraPhy::SLEEP:

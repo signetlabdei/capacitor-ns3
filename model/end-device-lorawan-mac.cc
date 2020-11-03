@@ -264,7 +264,9 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       Ptr<LoraRadioEnergyModel> loraradioemodel = nodeEnergySource->
         FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get(0)->GetObject<LoraRadioEnergyModel>();
       EndDeviceLoraPhy::State stateForPrediction = EndDeviceLoraPhy::TX;
-      double predictedEnergyConsumption = loraradioemodel-> ComputeLoraEnergyConsumption (stateForPrediction, duration);
+      double predictedEnergyConsumption = loraradioemodel->
+        ComputeLoraEnergyConsumption (stateForPrediction,
+                                      duration);
       NS_LOG_DEBUG("Predicted energy consumption " << predictedEnergyConsumption);
 
       double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();

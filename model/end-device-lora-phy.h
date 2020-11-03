@@ -92,6 +92,11 @@ public:
    * Notify listeners that the device is off
    */
   virtual void NotifyOff (void) = 0;
+
+  /**
+   * Notify listeners that the device is turning on
+   */
+  virtual void NotifyTurnOn (void) = 0;
 };
 
 /**
@@ -155,6 +160,11 @@ public:
      * The device is turned OFF
      */
     OFF,
+
+    /**
+     * the device is turning on after the OFF state
+     */
+    TURNON,
 
     /**
      * The PHY is in idle state before the opening of a RX window. In this case,
@@ -247,12 +257,17 @@ public:
   void SwitchToOff (void);
 
   /**
+   * Turining ON the device
+   */
+  void SwitchToTurnOn (void);
+
+      /**
    * Add the input listener to the list of objects to be notified of PHY-level
    * events.
    *
    * \param listener the new listener
    */
-  void RegisterListener (EndDeviceLoraPhyListener *listener);
+      void RegisterListener (EndDeviceLoraPhyListener *listener);
 
   /**
    * Remove the input listener from the list of objects to be notified of
