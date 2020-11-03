@@ -18,17 +18,18 @@
 #include "ns3/assert.h"
 #include "ns3/boolean.h"
 #include "ns3/capacitor-energy-source.h"
+#include "ns3/double.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/end-device-status.h"
 #include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/lora-net-device.h"
+#include "ns3/nstime.h"
 #include "ns3/simulator.h"
 #include "ns3/pointer.h"
 #include "ns3/energy-source.h"
 #include "lora-radio-energy-model.h"
 #include "src/core/model/boolean.h"
-
 
 namespace ns3 {
 namespace lorawan {
@@ -221,6 +222,34 @@ LoraRadioEnergyModel::GetCurrentState (void) const
   return m_currentState;
 }
 
+
+double
+LoraRadioEnergyModel::GetLoad (EndDeviceLoraPhy::State status)
+{
+  NS_LOG_FUNCTION (status);
+  double current;
+  switch (status)
+    {
+    case EndDeviceLoraPhy::STANDBY:
+      current =  m_idleCurrentA;
+    case EndDeviceLoraPhy::TX:
+      current =  m_txCurrentA;
+    case EndDeviceLoraPhy::RX:
+      current =  m_rxCurrentA;
+    case EndDeviceLoraPhy::SLEEP:
+      current =  m_sleepCurrentA;
+    case EndDeviceLoraPhy::IDLE:
+      current =  m_idleCurrentA;
+    case EndDeviceLoraPhy::OFF:
+      current =  0;
+    default:
+      NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << status);
+    }
+  return m_referenceVoltage / current;
+}
+
+
+// Callbacks
 void
 LoraRadioEnergyModel::SetEnergyDepletionCallback (
   LoraRadioEnergyDepletionCallback callback)
@@ -481,29 +510,10 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
         voltage = m_source->GetSupplyVoltage ();
       }
 
-  switch (status)
-    {
-    case EndDeviceLoraPhy::STANDBY:
-      energyConsumption = duration.GetSeconds () * m_idleCurrentA * voltage;
-      break;
-    case EndDeviceLoraPhy::TX:
-      energyConsumption = duration.GetSeconds () * m_txCurrentA * voltage;
-      break;
-    case EndDeviceLoraPhy::RX:
-      energyConsumption = duration.GetSeconds () * m_rxCurrentA * voltage;
-      break;
-    case EndDeviceLoraPhy::IDLE:
-      energyConsumption = duration.GetSeconds () * m_idleCurrentA * voltage;
-      break;
-    case EndDeviceLoraPhy::SLEEP:
-      energyConsumption = duration.GetSeconds () * m_sleepCurrentA * voltage;
-      break;
-    case EndDeviceLoraPhy::OFF:
-      energyConsumption = 0;
-      break;
-    default:
-      NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state: " << status);
-    }
+  double load = GetLoad (status);
+  double current = voltage/load;
+
+  energyConsumption = duration.GetSeconds () * current * voltage;
 
   NS_LOG_DEBUG("energyconsumption=" << energyConsumption);
   return energyConsumption;
@@ -627,5 +637,5 @@ LoraRadioEnergyModelPhyListener::SwitchToStandby (void)
   m_changeStateCallback (EndDeviceLoraPhy::STANDBY);
 }
 
-}
+} // namespace lorawan
 } // namespace ns3

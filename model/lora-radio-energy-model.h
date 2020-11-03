@@ -19,6 +19,7 @@
 #define LORA_RADIO_ENERGY_MODEL_H
 
 #include "ns3/device-energy-model.h"
+#include "ns3/end-device-lora-phy.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/traced-value.h"
 #include "end-device-lora-phy.h"
@@ -243,6 +244,11 @@ public:
    * \param sleepCurrentA the sleep current
    */
   void SetSleepCurrentA (double sleepCurrentA);
+
+  /**
+   * Compute the load for a status using the reference voltage
+   */
+  double GetLoad (EndDeviceLoraPhy::State status);
 
   /**
    * \returns Current state.
