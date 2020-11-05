@@ -271,15 +271,18 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       // If capacitor energy source
       if (!(capacitor == 0))
         {
-          double predictedVoltageConsumption =
-              capacitor->PredictLoraVoltageVariation (EndDeviceLoraPhy::TX, duration);
+          double predictedVoltage =
+              capacitor->PredictVoltageForLoraState (EndDeviceLoraPhy::TX, duration);
           double actualVoltage = capacitor->GetActualVoltage ();
           double maxVoltage = capacitor-> GetSupplyVoltage();
           DoubleValue lowThreshold;
           capacitor->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
-          if (actualVoltage - predictedVoltageConsumption < lowThreshold.Get() * maxVoltage)
+          NS_LOG_DEBUG("actual V, " << actualVoltage << " predicted V, " <<
+                       predictedVoltage << " th "
+                       << lowThreshold.Get() <<", Vmax " << maxVoltage);
+          if (predictedVoltage < lowThreshold.Get() * maxVoltage)
             {
-              NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
+              NS_LOG_DEBUG ("Voltage is not enough!! We can not tx!");
               m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (),
                                    false);
               // TODO? same check fr RXwind?

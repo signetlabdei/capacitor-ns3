@@ -327,6 +327,7 @@ ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow (void)
   // - STANDBY -> Nothing was received.
   // - SLEEP -> We have received a packet.
   // We should never be in TX or SLEEP mode at this point
+  NS_LOG_DEBUG ("Actual state is " << phy->GetState ());
   switch (phy->GetState ())
     {
     case EndDeviceLoraPhy::TX:

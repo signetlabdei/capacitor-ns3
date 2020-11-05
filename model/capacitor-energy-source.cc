@@ -60,7 +60,7 @@ CapacitorEnergySource::GetTypeId (void)
                          DoubleValue (0), // in Volt
                          MakeDoubleAccessor (&CapacitorEnergySource::SetInitialEnergy),
                          MakeDoubleChecker<double> ())
-          .AddAttribute ("CapacitorEnergySupplyVoltageV",
+          .AddAttribute ("CapacitorMaxSupplyVoltageV",
                          "Max Supply voltage for capacitor energy source.",
                          DoubleValue (3.3), // in Volts
                          MakeDoubleAccessor (&CapacitorEnergySource::m_supplyVoltageV),
@@ -219,6 +219,13 @@ CapacitorEnergySource::GetVoltageFraction (void)
 
 }
 
+bool
+CapacitorEnergySource::IsDepleted (void)
+{
+  NS_LOG_FUNCTION (this);
+  return m_depleted;
+}
+
 void
 CapacitorEnergySource::UpdateEnergySource (void)
 {
@@ -318,7 +325,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
 // }
 
   double
-  CapacitorEnergySource::ComputeVoltageVariation (double Iload, Time duration)
+  CapacitorEnergySource::ComputeVoltage (double Iload, Time duration)
   {
     NS_LOG_FUNCTION (this);
     if (Iload == 0) // Device in OFF state
@@ -350,7 +357,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
   NS_LOG_DEBUG ("Previous voltage: " << m_actualVoltageV <<
                 " exp= " << exp(-durationS/(Rload*m_capacity)) <<
                 " , new voltage = " << voltage  );
-  return m_actualVoltageV - voltage;
+  return voltage;
   }
 
   void
@@ -359,13 +366,13 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
     NS_LOG_FUNCTION (this);
     Time duration = Simulator::Now () - m_lastUpdateTime;
     double Iload = CalculateDevicesCurrent ();
-    double voltage = ComputeVoltageVariation (Iload, duration);
+    double voltage = ComputeVoltage (Iload, duration);
 
-    m_actualVoltageV =- voltage;
+    m_actualVoltageV = voltage;
   }
 
 double
-CapacitorEnergySource::PredictLoraVoltageVariation (lorawan::EndDeviceLoraPhy::State status,
+CapacitorEnergySource::PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
                                                 Time duration)
 {
   NS_LOG_FUNCTION (this);
@@ -382,7 +389,7 @@ CapacitorEnergySource::PredictLoraVoltageVariation (lorawan::EndDeviceLoraPhy::S
         }
       Iload += loraradio ->GetCurrent (status);
     }
-  double voltage = ComputeVoltageVariation(Iload, duration);
+  double voltage = ComputeVoltage(Iload, duration);
 
 return voltage;
 }

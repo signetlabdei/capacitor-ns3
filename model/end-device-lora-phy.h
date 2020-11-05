@@ -297,6 +297,9 @@ protected:
   */
   bool SwitchToKOStateIfNeeded (void);
 
+  // TODO Add description
+  bool IsEnergySourceDepleted (void);
+
   /**
    * Trace source for when a packet is lost because it was using a SF different from
    * the one this EndDeviceLoraPhy was configured to listen for.

@@ -438,8 +438,15 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
 
   // ChangeState (EndDeviceLoraPhy::SLEEP);
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-  edPhy->SwitchToTurnOn ();
-  Simulator::Schedule (m_turnOnDuration, &EndDeviceLoraPhy::SwitchToSleep, edPhy);
+  if (edPhy->GetState () == EndDeviceLoraPhy::OFF)
+    {
+      edPhy->SwitchToTurnOn ();
+      Simulator::Schedule (m_turnOnDuration, &EndDeviceLoraPhy::SwitchToSleep, edPhy);
+    }
+  else
+    {
+      edPhy->SwitchToSleep ();
+    }
 
   // TODO insert event
   NS_LOG_DEBUG("TODO: Update tracker");
@@ -535,14 +542,14 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
   NS_LOG_FUNCTION(this);
   NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
 
-  double energyConsumption = 0;
+  double energy = 0;
   double voltage;
   Ptr<CapacitorEnergySource> capacitor = m_source -> GetObject<CapacitorEnergySource>();
   if (!(capacitor == 0))
     {
       voltage =
-          capacitor->PredictLoraVoltageVariation (status, duration);
-      NS_LOG_DEBUG("Voltage variation [V] = " << voltage );
+          capacitor->PredictVoltageForLoraState (status, duration);
+      NS_LOG_DEBUG("New voltage [V] = " << voltage );
     }
   else
       {
@@ -556,10 +563,10 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
   NS_LOG_DEBUG ("load = " << load);
 
   // The following is the same as E = P t, with P = (v(t))^2/Rload
-  energyConsumption = duration.GetSeconds () * current * voltage;
+  energy = duration.GetSeconds () * current * voltage;
 
-  NS_LOG_DEBUG("energyconsumption= " << energyConsumption);
-  return energyConsumption;
+  NS_LOG_DEBUG("new energy = " << energy);
+  return energy;
 }
 
 

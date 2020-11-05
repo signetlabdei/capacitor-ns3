@@ -117,14 +117,19 @@ public:
   double GetVoltageFraction (void);
 
   /**
+   Verify if the energy source is depleted
+  */
+  bool IsDepleted (void);
+
+  /**
    * Compute new voltage given Iload and time duration
    */
-  double ComputeVoltageVariation (double Iload, Time duration);
+  double ComputeVoltage (double Iload, Time duration);
 
   /**
    * Predict voltage variation for a given state and duration
    */
-  double PredictLoraVoltageVariation (lorawan::EndDeviceLoraPhy::State status,
+  double PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
                                       Time duration);
 
 private:

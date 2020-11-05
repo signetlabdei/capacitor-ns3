@@ -129,7 +129,7 @@ EndDeviceLoraPhy::SwitchToSleep (void)
       return;
     }
 
-  if (!SwitchToKOStateIfNeeded ())
+  if ( !SwitchToKOStateIfNeeded ())
     {
       m_state = SLEEP;
 
@@ -146,7 +146,7 @@ EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (!SwitchToKOStateIfNeeded ())
+  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
     {
       m_state = STANDBY;
 
@@ -166,7 +166,7 @@ EndDeviceLoraPhy::SwitchToRx (void)
 
   NS_ASSERT (m_state == STANDBY);
 
-  if (!SwitchToKOStateIfNeeded ())
+  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
     {
       m_state = RX;
 
@@ -186,7 +186,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 
   NS_ASSERT (m_state != RX);
 
-  if (!SwitchToKOStateIfNeeded ())
+  if (!(IsEnergySourceDepleted ()) && !(SwitchToKOStateIfNeeded ()))
     {
       m_state = TX;
 
@@ -206,10 +206,11 @@ EndDeviceLoraPhy::SwitchToIdle (void)
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_DEBUG("Current state " << m_state);
 
-  NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
 
-  if (!SwitchToKOStateIfNeeded ())
+  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
     {
+      NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
+
       NS_LOG_DEBUG("Actually switching to idle");
       m_state = IDLE;
 
@@ -250,7 +251,7 @@ EndDeviceLoraPhy::SwitchToTurnOn (void)
 
   NS_ASSERT_MSG (m_state == OFF, "Trying to turn on, but device is not in OFF!");
 
-  if (!(SwitchToKOStateIfNeeded ()))
+  if (!(IsEnergySourceDepleted ()) && !(SwitchToKOStateIfNeeded ()))
     // We won't need to enter in KO state, but this updates the energy source
     {
       m_state = TURNON;
@@ -331,6 +332,11 @@ EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
   if (!(capacitorEnergySource == 0))
     {
       NS_LOG_DEBUG ("found capacitorEnergySource pointer");
+      // if (capacitorEnergySource->IsDepleted ())
+      //   {
+      //     NS_LOG_DEBUG ("Energy depleted: do not switch");
+      //     return true;
+      //   }
       DoubleValue lowVoltageThreshold;
       capacitorEnergySource->GetAttribute ("CapacitorLowVoltageThreshold", lowVoltageThreshold);
       fraction = capacitorEnergySource->GetVoltageFraction ();
@@ -358,6 +364,34 @@ EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
     {
       return false;
     }
+}
+
+bool
+EndDeviceLoraPhy::IsEnergySourceDepleted (void)    
+{
+  // TODO Clean this up  
+  // TODO Integrate better with previous function (s)
+
+  Ptr<EnergySource> nodeEnergySource =
+      m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
+  if (nodeEnergySource == 0)
+    {
+      NS_LOG_DEBUG ("Energy Source not found: returning false");
+      return false;
+    }
+
+  // If CapacitorEnergySource
+  Ptr<CapacitorEnergySource> capacitorEnergySource = nodeEnergySource->GetObject<CapacitorEnergySource> ();
+  if (!(capacitorEnergySource == 0))
+    {
+      NS_LOG_DEBUG ("found capacitorEnergySource pointer");
+      if (capacitorEnergySource->IsDepleted ())
+        {
+          NS_LOG_DEBUG ("Energy depleted: do not switch");
+          return true;
+        }
+    }
+  return false;
 }
 
 } // lorawan

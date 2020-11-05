@@ -192,19 +192,19 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -327,9 +327,10 @@ int main (int argc, char *argv[])
   // CapacitorEnergySource
   Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
   capacitor->SetAttribute ("Capacity", DoubleValue(capacity));
-  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.05));
-  capacitor-> SetAttribute ("CapacitorEnergySourceInitialEnergyJ",
-                          DoubleValue (3));
+  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.3));
+  capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.5));
+  capacitor->SetAttribute ("CapacitorMaxSupplyVoltageV", DoubleValue (3));
+  capacitor->SetAttribute ("CapacitorEnergySourceInitialVoltageV", DoubleValue (2));
   capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(200)));
 
   Ptr<LoraRadioEnergyModel> radioEnergy = CreateObject<LoraRadioEnergyModel>();
@@ -353,8 +354,8 @@ int main (int argc, char *argv[])
   //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res
   //     7(2017) : 1281 - 1295.
   // Let's assume we are OUTDOOR, and the surface we are provided is 2 cm2
-  double minPowerDensity = 30e-3;
-  double maxPowerDensity = 0.30e-3;
+  double minPowerDensity = 0.000001; // 30e-3;
+  double maxPowerDensity = 0.00001; // 0.30e-3;
   std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
   harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
@@ -375,9 +376,9 @@ int main (int argc, char *argv[])
 
   Names::Add ("/Names/EnergySource", capacitor);
 
-
   // install harvester on the energy source
   // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
+  EnergyHarvesterContainer harvesters = harvesterHelper.Install (energyContainer->Get(0));
 
   // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
   // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
@@ -447,18 +448,18 @@ int main (int argc, char *argv[])
       outputFile.close ();
     }
 
-  // if (enoughEnergyCallbackFirstCall)
-  //   {
-  //     const char *c = filenameEnoughEnergy.c_str ();
-  //     std::ofstream outputFile;
-  //     // Delete contents of the file as it is opened
-  //     outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
-  //     // Set the initial sleep state
-  //     outputFile << 0 << " " << 0 << std::endl;
-  //     NS_LOG_DEBUG ("Append initially not enough energy, because never called");
-  //     stateChangeCallbackFirstCall = false;
-  //     outputFile.close ();
-  //   }
+  if (energyConsumptionCallbackFirstCall)
+    {
+      const char *c = filenameEnergyConsumption.c_str ();
+      std::ofstream outputFile;
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      // Set the initial sleep state
+      outputFile << 0 << " " << 0 << std::endl;
+      NS_LOG_DEBUG ("Append initially not enough energy, because never called");
+      stateChangeCallbackFirstCall = false;
+      outputFile.close ();
+    }
 
   Simulator::Destroy ();
 
