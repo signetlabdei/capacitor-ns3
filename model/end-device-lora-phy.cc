@@ -23,6 +23,7 @@
 #include "ns3/device-energy-model-container.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/lora-radio-energy-model.h"
+#include "ns3/capacitor-energy-source.h"
 #include "ns3/simulator.h"
 #include "ns3/lora-tag.h"
 #include "ns3/log.h"

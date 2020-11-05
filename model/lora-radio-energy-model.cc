@@ -15,6 +15,7 @@
  * Author: Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
+#include "ns3/abort.h"
 #include "ns3/assert.h"
 #include "ns3/boolean.h"
 #include "ns3/capacitor-energy-source.h"
@@ -247,7 +248,7 @@ LoraRadioEnergyModel::SetTurnOnCurrentA (double turnOnCurrentA)
 
 
 double
-LoraRadioEnergyModel::GetLoad (EndDeviceLoraPhy::State status)
+LoraRadioEnergyModel::GetCurrent (EndDeviceLoraPhy::State status)
 {
   NS_LOG_FUNCTION (status);
   double current;
@@ -277,7 +278,7 @@ LoraRadioEnergyModel::GetLoad (EndDeviceLoraPhy::State status)
     default:
       NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << status);
     }
-  return m_referenceVoltage / current;
+  return current;
 }
 
 
@@ -535,24 +536,29 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
   NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
 
   double energyConsumption = 0;
-  // double supplyVoltage = m_source->GetSupplyVoltage ();
   double voltage;
   Ptr<CapacitorEnergySource> capacitor = m_source -> GetObject<CapacitorEnergySource>();
   if (!(capacitor == 0))
     {
-      voltage = capacitor->GetActualVoltage ();
+      voltage =
+          capacitor->PredictLoraVoltageVariation (status, duration);
+      NS_LOG_DEBUG("Voltage variation [V] = " << voltage );
     }
   else
       {
+        // TODO Check this...
+        NS_ABORT_MSG("Check energy source");
         voltage = m_source->GetSupplyVoltage ();
       }
 
-  double load = GetLoad (status);
+  double load = m_referenceVoltage/GetCurrent (status);
   double current = voltage/load;
+  NS_LOG_DEBUG ("load = " << load);
 
+  // The following is the same as E = P t, with P = (v(t))^2/Rload
   energyConsumption = duration.GetSeconds () * current * voltage;
 
-  NS_LOG_DEBUG("energyconsumption=" << energyConsumption);
+  NS_LOG_DEBUG("energyconsumption= " << energyConsumption);
   return energyConsumption;
 }
 

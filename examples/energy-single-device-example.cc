@@ -52,9 +52,11 @@ using namespace lorawan;
 
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
-std::string filenameRemainingEnergy = "remainingEnegy.txt";
+std::string filenameEnergyConsumption = "energyConsumption.txt";
+std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
 std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
+bool energyConsumptionCallbackFirstCall = true;
 bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
 
@@ -71,7 +73,27 @@ OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
 void
 OnDeviceEnergyConsumption (double oldvalue, double energyConsumption)
 {
-  // TODO
+  const char *c = filenameEnergyConsumption.c_str ();
+  std::ofstream outputFile;
+  if (energyConsumptionCallbackFirstCall)
+    {
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      // Set the initial sleep state
+      // outputFile << 0 << " " << 0 << std::endl;
+      // NS_LOG_DEBUG ("Append initial state inside the callback");
+      outputFile <<  "0 0" << std::endl;
+      energyConsumptionCallbackFirstCall = false;
+    }
+  else
+    {
+    // Only append to the file
+    outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
+
+  outputFile << Simulator::Now ().GetSeconds () << " " << energyConsumption << std::endl;
+
+  outputFile.close ();
 }
 
 void
@@ -171,7 +193,7 @@ int main (int argc, char *argv[])
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
@@ -182,7 +204,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -305,7 +327,7 @@ int main (int argc, char *argv[])
   // CapacitorEnergySource
   Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
   capacitor->SetAttribute ("Capacity", DoubleValue(capacity));
-  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.3));
+  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.05));
   capacitor-> SetAttribute ("CapacitorEnergySourceInitialEnergyJ",
                           DoubleValue (3));
   capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(200)));

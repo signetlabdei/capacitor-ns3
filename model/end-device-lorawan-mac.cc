@@ -27,6 +27,7 @@
 #include "ns3/double.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/energy-source.h"
+#include "ns3/capacitor-energy-source.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
@@ -263,19 +264,55 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
 
       Ptr<LoraRadioEnergyModel> loraradioemodel = nodeEnergySource->
         FindDeviceEnergyModels("ns3::LoraRadioEnergyModel").Get(0)->GetObject<LoraRadioEnergyModel>();
-      EndDeviceLoraPhy::State stateForPrediction = EndDeviceLoraPhy::TX;
-      double predictedEnergyConsumption = loraradioemodel->
-        ComputeLoraEnergyConsumption (stateForPrediction,
-                                      duration);
-      NS_LOG_DEBUG("Predicted energy consumption " << predictedEnergyConsumption);
 
-      double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
-      NS_LOG_DEBUG ("Remaining energy is " << remainingEnergy);
-      // // Soluzione 1
-      // if (remainingEnergy < predictedEnergyConsumption)
+      // // Soluzione 1 - Using VOLTAGE
+
+      Ptr<CapacitorEnergySource> capacitor = nodeEnergySource -> GetObject<CapacitorEnergySource>();
+      // If capacitor energy source
+      if (!(capacitor == 0))
+        {
+          double predictedVoltageConsumption =
+              capacitor->PredictLoraVoltageVariation (EndDeviceLoraPhy::TX, duration);
+          double actualVoltage = capacitor->GetActualVoltage ();
+          double maxVoltage = capacitor-> GetSupplyVoltage();
+          DoubleValue lowThreshold;
+          capacitor->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
+          if (actualVoltage - predictedVoltageConsumption < lowThreshold.Get() * maxVoltage)
+            {
+              NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
+              m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (),
+                                   false);
+              // TODO? same check fr RXwind?
+              return;
+            }
+          else
+              {
+                // Remaining energy is enough. With the transmission we could fall under the battery threshold
+                m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
+              }
+        }
+      else
+        {
+          NS_LOG_DEBUG("Capacitor energy source not found: no check on the state of energy/voltage.");
+        }
+
+      // // Soluzione 2 - Using ENERGY
+      // double predictedEnergyConsumption =
+      //     loraradioemodel->ComputeLoraEnergyConsumption (EndDeviceLoraPhy::TX, duration);
+      // NS_LOG_DEBUG ("Predicted energy consumption " << predictedEnergyConsumption);
+
+      // double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
+      // NS_LOG_DEBUG ("Remaining energy is " << remainingEnergy);
+      // // If BasicEnergySource
+      // double initialEnergy = nodeEnergySource->GetInitialEnergy ();
+      // DoubleValue lowThreshold;
+      // // nodeEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowThreshold);
+
+      // if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get () * initialEnergy))
       //   {
       //     NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
       //     m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
+      //     // TODO? same check fr RXwind?
       //     return;
       //   }
       // else
@@ -283,27 +320,6 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       //     // Remaining energy is enough. With the transmission we could fall under the battery threshold
       //     m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
       //   }
-
-      // Soluzione 2
-      double initialEnergy = nodeEnergySource-> GetInitialEnergy();
-      DoubleValue lowThreshold;
-      // If BasicEnergySource
-      // nodeEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowThreshold);
-      // If capacitor energy source
-      nodeEnergySource->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
-
-      if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get () * initialEnergy))
-        {
-          NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
-          m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
-          // TODO? same check fr RXwind?
-          return;
-        }
-      else
-        {
-          // Remaining energy is enough. With the transmission we could fall under the battery threshold
-          m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
-        }
 
 
       // Reset MAC command list

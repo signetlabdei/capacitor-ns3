@@ -26,8 +26,10 @@
 #include "ns3/nstime.h"
 #include "ns3/event-id.h"
 #include "ns3/energy-source.h"
+#include "ns3/end-device-lora-phy.h"
 
 namespace ns3 {
+
 
 /**
  * \ingroup energy
@@ -114,6 +116,17 @@ public:
    */
   double GetVoltageFraction (void);
 
+  /**
+   * Compute new voltage given Iload and time duration
+   */
+  double ComputeVoltageVariation (double Iload, Time duration);
+
+  /**
+   * Predict voltage variation for a given state and duration
+   */
+  double PredictLoraVoltageVariation (lorawan::EndDeviceLoraPhy::State status,
+                                      Time duration);
+
 private:
   /// Defined in ns3::Object
   void DoInitialize (void);
@@ -146,7 +159,6 @@ private:
   //  */
   // void CalculateRemainingEnergy (void);
 
-
   /**
    * Compute the voltage at this time.
    */
@@ -154,29 +166,28 @@ private:
 
 
   /**
-   * Compute the current consumed by the devices
+   * Compute the current consumed by the devices in this moment
    */
   double CalculateDevicesCurrent (void);
 
   /**
    * Compute the current produced by the harvesters
    */
-  double CalculateHarvestersCurrent (void);
+  double GetHarvestersPower (void);
 
 private:
-  double m_initialVoltageV;               // initial voltage, in Volt
-  double m_supplyVoltageV;                // supply voltage, in Volts
-  double m_capacity;                      // capacity, in Farad
-  double m_lowVoltageTh;                  // low voltage threshold, as a fraction of the initial voltage
-  double m_highVoltageTh;                 // high voltage threshold, as a fraction of the initial voltage
-  bool m_depleted;                        // set to true when the remaining energy goes below the low threshold,
-                                          // set to false again when the remaining energy exceeds the high threshold
+  double m_initialVoltageV; // initial voltage, in Volt
+  double m_supplyVoltageV; // supply voltage, in Volts
+  double m_capacity; // capacity, in Farad
+  double m_lowVoltageTh; // low voltage threshold, as a fraction of the initial voltage
+  double m_highVoltageTh; // high voltage threshold, as a fraction of the initial voltage
+  bool m_depleted; // set to true when the remaining energy goes below the low threshold,
+      // set to false again when the remaining energy exceeds the high threshold
   TracedValue<double> m_remainingEnergyJ; // remaining energy, in Joules
-  TracedValue<double> m_actualVoltageV;   // the voltage at the present moment, in V
-  EventId m_voltageUpdateEvent;            // voltage update event
-  Time m_lastUpdateTime;                  // last update time
-  Time m_updateInterval;            // voltage update interval
-
+  TracedValue<double> m_actualVoltageV; // the voltage at the present moment, in V
+  EventId m_voltageUpdateEvent; // voltage update event
+  Time m_lastUpdateTime; // last update time
+  Time m_updateInterval; // voltage update interval
 };
 
 } // namespace ns3

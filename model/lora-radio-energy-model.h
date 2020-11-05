@@ -120,7 +120,7 @@ private:
 
 /**
  * \ingroup energy
- * \brief A WiFi radio energy model.
+ * \brief A Lora radio energy model.
  *
  * 4 states are defined for the radio: TX, RX, STANDBY, SLEEP. Default state is
  * STANDBY.
@@ -182,6 +182,8 @@ public:
   double GetTotalEnergyConsumption (void) const;
 
   // Setter & getters for state power consumption.
+  double GetCurrent (EndDeviceLoraPhy::State status);
+
   double GetStandbyCurrentA (void) const;
   void SetStandbyCurrentA (double idleCurrentA);
 
@@ -203,7 +205,7 @@ public:
   /**
    * Compute the load for a status using the reference voltage
    */
-  double GetLoad (EndDeviceLoraPhy::State status);
+  double GetLoraDeviceCurrent (EndDeviceLoraPhy::State status);
 
   /**
    * \returns Current state.
