@@ -21,6 +21,7 @@
 
 #include "capacitor-energy-source.h"
 #include "lora-radio-energy-model.h"
+#include "ns3/abort.h"
 #include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/assert.h"
@@ -328,23 +329,37 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
   CapacitorEnergySource::ComputeVoltage (double Iload, Time duration)
   {
     NS_LOG_FUNCTION (this);
-    if (Iload == 0) // Device in OFF state
-      {
-        NS_LOG_DEBUG ("[DEBUG] Device in OFF state, no voltage variation");
-        return 0;
-      }
     double ph = GetHarvestersPower ();
     double ri = pow (m_supplyVoltageV, 2) / ph; // limits the power of the harvesters
-    double Rload = m_supplyVoltageV / Iload; // load resistance
-    double Req;
-    if (ph == 0)
+    double Rload = 0;
+    double Req = 0;
+    if (Iload == 0 || ph == 0) 
       {
-        Req = Rload;
+        if (Iload == 0 && !(ph == 0))
+          {
+            NS_LOG_DEBUG ("[DEBUG] Device in OFF state");
+            Req = ri;
+          }
+        else if (!(Iload == 0) && (ph == 0))
+          {
+            NS_LOG_DEBUG ("[DEBUG] No harvester");
+            Rload = m_supplyVoltageV / Iload; // load resistance
+            Req = Rload;
+          }
+        else
+          {
+            // TODO What to do in this case?
+            NS_ABORT_MSG("Weird case: no harvested power and no device consumption (OFF)");
+            // Assuming no consumption ?
+            return m_actualVoltageV;
+          }
       }
-  else
-    {
-      Req = (Rload * ri) / (Rload + ri);
-    }
+    else
+      {
+        Rload = m_supplyVoltageV / Iload; // load resistance
+        Req = (Rload * ri) / (Rload + ri);
+      }
+
   NS_LOG_DEBUG ("r_i= " << ri << ", Rload= " << Rload << ", Req= " << Req);
   NS_ASSERT (duration.IsPositive ());
   double durationS = duration.GetSeconds();
@@ -369,6 +384,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
     double voltage = ComputeVoltage (Iload, duration);
 
     m_actualVoltageV = voltage;
+    m_lastUpdateTime = Simulator::Now();
   }
 
 double

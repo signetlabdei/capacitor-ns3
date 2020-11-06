@@ -22,6 +22,8 @@
 #include "ns3/assert.h"
 #include "ns3/device-energy-model-container.h"
 #include "ns3/end-device-lora-phy.h"
+#include "ns3/energy-source.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/capacitor-energy-source.h"
 #include "ns3/simulator.h"
