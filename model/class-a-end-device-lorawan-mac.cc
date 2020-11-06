@@ -242,7 +242,7 @@ void
 ClassAEndDeviceLorawanMac::FailedReception (Ptr<Packet const> packet,
                                             bool lostBecauseInterference)
 {
-  NS_LOG_FUNCTION (this << packet);
+  NS_LOG_FUNCTION (this << "lostBecauseInt: " << lostBecauseInterference << "< packet: " << packet );
 
   if (lostBecauseInterference)
   {
@@ -281,16 +281,7 @@ ClassAEndDeviceLorawanMac::TxFinished (Ptr<const Packet> packet)
 
   // Schedule the opening of the second receive window
   m_secondReceiveWindow = Simulator::Schedule (m_receiveDelay2,
-                                               &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow,
-                                               this);
-  // // Schedule the opening of the first receive window
-  // Simulator::Schedule (m_receiveDelay1,
-  //                      &ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow, this);
-  //
-  // // Schedule the opening of the second receive window
-  // m_secondReceiveWindow = Simulator::Schedule (m_receiveDelay2,
-  //                                              &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow,
-  //                                              this);
+                                               &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow, this);
 
   // Switch the PHY to IDLE (waiting time before RX1)
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToIdle ();

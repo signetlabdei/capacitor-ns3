@@ -291,14 +291,10 @@ protected:
   void SwitchToTx (double txPowerDbm);
 
   /**
-   * At each state transition, check the remianing energy: if the device run out
-   * of energy (below the set threshold), switch to OFF or SLEEP state according to
-   *what set in the LoraRadioEnergyModel
-  */
-  bool SwitchToKOStateIfNeeded (void);
-
-  // TODO Add description
-  bool IsEnergySourceDepleted (void);
+   * Before switching to a new state, update the energy source, which will go to
+   * sleep/off state if needed. If everything ok, switch to the state.
+   */
+  bool IsEnergyStateOk (void);
 
   /**
    * Trace source for when a packet is lost because it was using a SF different from

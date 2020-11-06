@@ -191,21 +191,21 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   // Set up logging
-  LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -327,19 +327,19 @@ int main (int argc, char *argv[])
   // CapacitorEnergySource
   Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
   capacitor->SetAttribute ("Capacity", DoubleValue(capacity));
-  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.3));
-  capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.5));
-  capacitor->SetAttribute ("CapacitorMaxSupplyVoltageV", DoubleValue (3));
-  capacitor->SetAttribute ("CapacitorEnergySourceInitialVoltageV", DoubleValue (2));
-  capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(200)));
+  capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.2));
+  capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.9));
+  capacitor->SetAttribute ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
+  capacitor->SetAttribute ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
+  capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(600)));
 
   Ptr<LoraRadioEnergyModel> radioEnergy = CreateObject<LoraRadioEnergyModel>();
   radioEnergy-> SetAttribute ("StandbyCurrentA", DoubleValue (0.0014));
   // radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.01));
   radioEnergy-> SetAttribute ("SleepCurrentA", DoubleValue (0.0000015));
-  // radioEnergy.Set ("SleepCurrentA", DoubleValue (0.002));
   radioEnergy-> SetAttribute ("RxCurrentA", DoubleValue (0.0112));
-  radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(true));
+  radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(false));
+  radioEnergy->SetAttribute ("TurnOnDuration", TimeValue (Seconds(0.2)));
 
   Ptr<ConstantLoraTxCurrentModel> constantloratx;
   radioEnergy-> SetTxCurrentModel (constantloratx);

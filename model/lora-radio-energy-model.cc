@@ -344,7 +344,7 @@ LoraRadioEnergyModel::ChangeState (int newState)
   m_nPendingChangeState++;
 
   // notify energy source
-  m_source->UpdateEnergySource ();
+  // m_source->UpdateEnergySource (); // DONE IN THE PHY
 
   // in case the energy source is found to be depleted during the last update, a callback might be
   // invoked that might cause a change in the Lora PHY state (e.g., the PHY is put into SLEEP mode).
@@ -434,9 +434,7 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
   NS_LOG_DEBUG ("LoraRadioEnergyModel:Energy is recharged! Turning on the ED");
 
   // This may have a cost
-  m_source -> UpdateEnergySource();
 
-  // ChangeState (EndDeviceLoraPhy::SLEEP);
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
   if (edPhy->GetState () == EndDeviceLoraPhy::OFF)
     {
@@ -445,7 +443,8 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
     }
   else
     {
-      edPhy->SwitchToSleep ();
+      NS_ASSERT(edPhy->GetState() == EndDeviceLoraPhy::SLEEP);
+      // edPhy->SwitchToSleep ();
     }
 
   // TODO insert event

@@ -125,22 +125,32 @@ EndDeviceLoraPhy::SwitchToSleep (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
+  // This to avoid that the case in which: energy depleted -> OFF
+  // energy recharged -> Turn on + schedule sleep
+  // energy depleted during turn on, device goes to OFF but switch to sleep is
+  // still scheduled
+  if (m_state == OFF)
+    {
+      NS_LOG_DEBUG("Not switching to sleep because in OFF state");
+      return;
+    }
+
   if (m_state == SLEEP)
     {
       NS_LOG_DEBUG ("Device already in SLEEP state");
       return;
     }
 
-  if ( !SwitchToKOStateIfNeeded ())
-    {
-      m_state = SLEEP;
+   if (IsEnergyStateOk ())
+      {
+        m_state = SLEEP;
 
-      // Notify listeners of the state change
-      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-        {
-          (*i)->NotifySleep();
-        }
-    }
+        // Notify listeners of the state change
+        for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+          {
+            (*i)->NotifySleep ();
+          }
+      }
 }
 
 void
@@ -148,7 +158,7 @@ EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
+  if (IsEnergyStateOk ())
     {
       m_state = STANDBY;
 
@@ -168,7 +178,7 @@ EndDeviceLoraPhy::SwitchToRx (void)
 
   NS_ASSERT (m_state == STANDBY);
 
-  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
+  if (IsEnergyStateOk ())
     {
       m_state = RX;
 
@@ -188,17 +198,17 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 
   NS_ASSERT (m_state != RX);
 
-  if (!(IsEnergySourceDepleted ()) && !(SwitchToKOStateIfNeeded ()))
-    {
-      m_state = TX;
+  if (IsEnergyStateOk ())
+      {
+        m_state = TX;
 
-      // Notify listeners of the state change
-      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-        {
-          NS_LOG_DEBUG("Notify tx start");
-          (*i)->NotifyTxStart (txPowerDbm);
-        }
-    }
+        // Notify listeners of the state change
+        for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+          {
+            NS_LOG_DEBUG ("Notify tx start");
+            (*i)->NotifyTxStart (txPowerDbm);
+          }
+      }
 
 }
 
@@ -208,20 +218,19 @@ EndDeviceLoraPhy::SwitchToIdle (void)
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_DEBUG("Current state " << m_state);
 
+  if (IsEnergyStateOk ())
+      {
+        NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
 
-  if (!(IsEnergySourceDepleted ()) && !SwitchToKOStateIfNeeded ())
-    {
-      NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
+        NS_LOG_DEBUG ("Actually switching to idle");
+        m_state = IDLE;
 
-      NS_LOG_DEBUG("Actually switching to idle");
-      m_state = IDLE;
-
-      // Notify listeners of the state change
-      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-        {
-          (*i)->NotifyIdle ();
-        }
-    }
+        // Notify listeners of the state change
+        for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+          {
+            (*i)->NotifyIdle ();
+          }
+      }
 
 }
 
@@ -253,7 +262,7 @@ EndDeviceLoraPhy::SwitchToTurnOn (void)
 
   NS_ASSERT_MSG (m_state == OFF, "Trying to turn on, but device is not in OFF!");
 
-  if (!(IsEnergySourceDepleted ()) && !(SwitchToKOStateIfNeeded ()))
+  if (IsEnergyStateOk ())
     // We won't need to enter in KO state, but this updates the energy source
     {
       m_state = TURNON;
@@ -290,111 +299,49 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
     }
 }
 
-  // TODO Update by quering the energySource / loraradio ?? if going to sleep or off!
-bool
-EndDeviceLoraPhy::SwitchToKOStateIfNeeded (void)
-{
-  NS_LOG_FUNCTION (this);
 
-  bool switchToKOState = false;
+  bool
+  EndDeviceLoraPhy::IsEnergyStateOk (void)
+  {
+    NS_LOG_FUNCTION (this);
+    Ptr<EnergySource> nodeEnergySource =
+        m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
 
-  // TODO We could take the state which should be set as input, and than call the corresponding callback
-  // TODO Insert Callback if we interrupt a TX or RX
-
-  Ptr<EnergySource> nodeEnergySource =
-      m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
-  if (nodeEnergySource == 0)
-    {
-      NS_LOG_DEBUG ("Energy Source not found: returning false");
-      return switchToKOState;
-    }
-
-  Ptr<LoraRadioEnergyModel> loraEnergyModel =
-      nodeEnergySource->FindDeviceEnergyModels ("ns3::LoraRadioEnergyModel")
-          .Get (0)
-          ->GetObject<LoraRadioEnergyModel> ();
-  BooleanValue enterSleepIfDepleted;
-  loraEnergyModel->GetAttribute ("EnterSleepIfDepleted", enterSleepIfDepleted);
-
-  double fraction;
-
-  // If BasicEnergySource
-  Ptr<BasicEnergySource> basicEnergySource = nodeEnergySource->GetObject<BasicEnergySource> ();
-  if (!(basicEnergySource == 0))
-    {
-      NS_LOG_DEBUG("found basicEnergySource pointer");
-      DoubleValue lowBatteryThreshold;
-      basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowBatteryThreshold);
-      fraction = basicEnergySource->GetEnergyFraction ();
-      switchToKOState = fraction < lowBatteryThreshold.Get ();
-    }
-
-  // If CapacitorEnergySource
-  Ptr<CapacitorEnergySource> capacitorEnergySource = nodeEnergySource->GetObject<CapacitorEnergySource> ();
-  if (!(capacitorEnergySource == 0))
-    {
-      NS_LOG_DEBUG ("found capacitorEnergySource pointer");
-      // if (capacitorEnergySource->IsDepleted ())
-      //   {
-      //     NS_LOG_DEBUG ("Energy depleted: do not switch");
-      //     return true;
-      //   }
-      DoubleValue lowVoltageThreshold;
-      capacitorEnergySource->GetAttribute ("CapacitorLowVoltageThreshold", lowVoltageThreshold);
-      fraction = capacitorEnergySource->GetVoltageFraction ();
-      switchToKOState = fraction < lowVoltageThreshold.Get ();
-    }
-
-  // With BasicEnergySource or CapacitorEnergySource we have verified that we
-  // need to enter the KO state
-  if (switchToKOState)
-    {
-      if (enterSleepIfDepleted)
-        {
-          NS_LOG_DEBUG ("Remaining energy lower than the threshold! Switching to SLEEP mode");
-          SwitchToSleep ();
-        }
-      else
+    // If CapacitorEnergySource
+    Ptr<CapacitorEnergySource> capacitorEnergySource =
+        nodeEnergySource->GetObject<CapacitorEnergySource> ();
+    if (!(capacitorEnergySource == 0))
       {
-        NS_LOG_DEBUG ("Remaining energy lower than the threshold! Switching to OFF mode");
-        SwitchToOff ();
+        NS_LOG_DEBUG ("found capacitorEnergySource pointer");
+        capacitorEnergySource->UpdateEnergySource ();
+        if (capacitorEnergySource->IsDepleted ())
+          {
+            NS_LOG_DEBUG ("Capacitor energy depleted");
+            return false;
+          }
+        else
+          {
+            return true;
+          }
       }
 
-      return true;
-    }
-  else
-    {
-      return false;
-    }
-}
+    // If BasicEnergySource
+    Ptr<BasicEnergySource> basicEnergySource =
+      nodeEnergySource->GetObject<BasicEnergySource> ();
+    if (!(basicEnergySource == 0))
+      {
+        NS_LOG_DEBUG ("found basicEnergySource pointer");
+        DoubleValue lowBatteryThreshold;
+        basicEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold",
+                                         lowBatteryThreshold);
+        double fraction = basicEnergySource->GetEnergyFraction ();
+        return (! (fraction <= lowBatteryThreshold.Get ()));
+      }
 
-bool
-EndDeviceLoraPhy::IsEnergySourceDepleted (void)    
-{
-  // TODO Clean this up  
-  // TODO Integrate better with previous function (s)
+    NS_LOG_DEBUG ("Energy Source not found: returning true");
+    return true;
 
-  Ptr<EnergySource> nodeEnergySource =
-      m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
-  if (nodeEnergySource == 0)
-    {
-      NS_LOG_DEBUG ("Energy Source not found: returning false");
-      return false;
-    }
-
-  // If CapacitorEnergySource
-  Ptr<CapacitorEnergySource> capacitorEnergySource = nodeEnergySource->GetObject<CapacitorEnergySource> ();
-  if (!(capacitorEnergySource == 0))
-    {
-      NS_LOG_DEBUG ("found capacitorEnergySource pointer");
-      if (capacitorEnergySource->IsDepleted ())
-        {
-          NS_LOG_DEBUG ("Energy depleted: do not switch");
-          return true;
-        }
-    }
-  return false;
-}
+  }
 
 } // lorawan
 } // ns3

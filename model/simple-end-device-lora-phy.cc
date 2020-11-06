@@ -269,10 +269,15 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
   NS_LOG_FUNCTION (this << packet << event);
 
   // Automatically switch to Standby in either case
-  SwitchToStandby ();
+  // SwitchToStandby ();
+
+  // Switch to sleep instead of standby
+  // ref. Delgado2020batterylesslorawan (IoT-J)
+  // Casals, Modeling the energy performance..., Sensors, 2017
+  SwitchToSleep();
 
   //Check energy: if depleted do not forward the msg
-  if (SwitchToKOStateIfNeeded())
+  if (! IsEnergyStateOk())
     {
       NS_LOG_INFO ("Packet not correctly received because device run out of energy ");
       // If there is one, perform the callback to inform the upper layer of the
