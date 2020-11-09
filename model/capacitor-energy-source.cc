@@ -56,11 +56,11 @@ CapacitorEnergySource::GetTypeId (void)
                          MakeDoubleAccessor (&CapacitorEnergySource::SetInitialVoltage,
                                              &CapacitorEnergySource::GetInitialVoltage),
                          MakeDoubleChecker<double> ())
-          .AddAttribute ("CapacitorEnergySourceInitialEnergyJ",
-                         "Initial energy of the capacitor energy source.",
-                         DoubleValue (0), // in Volt
-                         MakeDoubleAccessor (&CapacitorEnergySource::SetInitialEnergy),
-                         MakeDoubleChecker<double> ())
+          // .AddAttribute ("CapacitorEnergySourceInitialEnergyJ",
+          //                "Initial energy of the capacitor energy source.",
+          //                DoubleValue (0), // in Volt
+          //                MakeDoubleAccessor (&CapacitorEnergySource::SetInitialEnergy),
+          //                MakeDoubleChecker<double> ())
           .AddAttribute ("CapacitorMaxSupplyVoltageV",
                          "Max Supply voltage for capacitor energy source.",
                          DoubleValue (3.3), // in Volts

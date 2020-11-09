@@ -59,6 +59,7 @@ def build(bld):
         'helper/one-shot-sender-helper.cc',
         'helper/forwarder-helper.cc',
         'helper/network-server-helper.cc',
+        'helper/capacitor-energy-source-helper.cc',
         'helper/lora-packet-tracker.cc',
         'test/utilities.cc',
         ]
@@ -121,6 +122,7 @@ def build(bld):
         'helper/one-shot-sender-helper.h',
         'helper/forwarder-helper.h',
         'helper/network-server-helper.h',
+        'helper/capacitor-energy-source-helper.h',
         'helper/lora-packet-tracker.h',
         'test/utilities.h',
         ]
