@@ -1,7 +1,7 @@
 
 /*
- * This script simulates a simple network to explain how the Lora energy model
- * works.
+ * This script simulates a simple network to test capacitor source
+ * and lora radio energy model.
  */
 
 #include "ns3/basic-energy-harvester.h"
@@ -53,6 +53,10 @@ using namespace lorawan;
 
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
+// Inputs
+double capacity = 0.006;
+double simTime = 100;
+double appPeriod = 10;
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
@@ -144,11 +148,6 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
 
 }
 
-// void
-// CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet, Time time, bool boolValue)
-// {
-//   NS_LOG_DEBUG("Enough energy to tx? " << boolValue);
-// }
 
 void
 OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::State status)
@@ -177,10 +176,9 @@ OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::Sta
   outputFile.close ();
 }
 
-double capacity = 0.006;
-double simTime = 100;
-double appPeriod = 10;
-
+/***********
+ ** MAIN  **
+ **********/
 int main (int argc, char *argv[])
 {
 
@@ -200,13 +198,13 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -220,7 +218,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("LoraFrameHeader", LOG_LEVEL_ALL);
 
   LogComponentEnableAll (LOG_PREFIX_FUNC);
-  // LogComponentEnableAll (LOG_PREFIX_NODE);
+  LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
 
   /************************
@@ -317,40 +315,13 @@ int main (int argc, char *argv[])
    ************************/
 
 
-  // configure energy source
-  // BasicEnergySourceHelper basicSourceHelper;
-  // basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.1)); // Energy in J 0.006
-  // basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (3.3));
-  // basicSourceHelper.Set ("BasicEnergyLowBatteryThreshold", DoubleValue (0.01));
-  // basicSourceHelper.Set ("BasicEnergyHighBatteryThreshold", DoubleValue (0.3));
-  // basicSourceHelper.Set ("PeriodicEnergyUpdateInterval", TimeValue(MilliSeconds(20)));
-
-  // CapacitorEnergySource
-  // Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
-  // capacitor->SetAttribute ("Capacity", DoubleValue (capacity));
-  // capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue (0.2));
-  // capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
-  // capacitor->SetAttribute ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
-  // capacitor->SetAttribute ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
-  // capacitor->SetAttribute ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
-  CapacitorEnergySourceHelper capacitor;
-  capacitor.Set ("Capacity", DoubleValue (capacity));
-  capacitor.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.4));
-  capacitor.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
-  capacitor.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
-  capacitor.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
-  capacitor.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
-
-  // Ptr<LoraRadioEnergyModel> radioEnergy = CreateObject<LoraRadioEnergyModel>();
-  // radioEnergy-> SetAttribute ("StandbyCurrentA", DoubleValue (0.0014));
-  // // radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.01));
-  // radioEnergy-> SetAttribute ("SleepCurrentA", DoubleValue (0.0000015));
-  // radioEnergy-> SetAttribute ("RxCurrentA", DoubleValue (0.0112));
-  // radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(true));
-  // radioEnergy->SetAttribute ("TurnOnDuration", TimeValue (Seconds(0.2)));
-
-  // Ptr<ConstantLoraTxCurrentModel> constantloratx;
-  // radioEnergy-> SetTxCurrentModel (constantloratx);
+  CapacitorEnergySourceHelper capacitorHelper;
+  capacitorHelper.Set ("Capacity", DoubleValue (capacity));
+  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.4));
+  capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
+  capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
+  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
+  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
@@ -371,44 +342,29 @@ int main (int argc, char *argv[])
   harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
   // install source on EDs' nodes
-  EnergySourceContainer sources = capacitor.Install (endDevices);
+  EnergySourceContainer sources = capacitorHelper.Install (endDevices);
   // install device model
   DeviceEnergyModelContainer deviceModels =
     radioEnergy.Install (endDevicesNetDevices, sources);
 
-  // // This usually done in the lora radio helper
-  // capacitor->AppendDeviceEnergyModel (radioEnergy);
-  // radioEnergy->SetEnergySource (capacitor);
-  // capacitor->SetNode (endDevices.Get (0));
-  // ObjectFactory fac;
-  // fac.SetTypeId ("ns3::EnergySourceContainer");
-  // Ptr<EnergySourceContainer> energyContainer = fac.Create<EnergySourceContainer> ();
-  // energyContainer->Add (capacitor);
-  // endDevices.Get(0)->AggregateObject (energyContainer);
-
-  // Names::Add ("/Names/EnergySource", capacitor);
   Names::Add ("/Names/EnergySource", sources.Get(0));
 
-  // install harvester on the energy source
-  // EnergyHarvesterContainer harvesters = harvesterHelper.Install (energyContainer->Get (0));
   EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
 
   // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
   // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
-
   // myHarvester -> TraceConnectWithoutContext("TotalEnergyHarvested",
   //                                           MakeCallback(&OnEnergyHarvested));
 
+
+  ///////////////////////
+  // Connect tracesources
+  ///////////////////////
 
   // Names::Add("Names/myEDmac", endDevices.Get(0)->GetObject<EndDeviceLorawanMac>());
   Ptr<LoraNetDevice> loraDevice = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLorawanMac> myEDmac = loraDevice->GetMac ()->GetObject<EndDeviceLorawanMac> ();
   Ptr<EndDeviceLoraPhy> myEDphy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-
-
-  // For the capacitor without helper also connect the listener!!
-  // myEDphy-> RegisterListener(radioEnergy-> GetPhyListener());
-  // radioEnergy-> SetLoraNetDevice(loraDevice);
 
   myEDmac->TraceConnectWithoutContext ("EnoughEnergyToTx",
                                        MakeCallback(&CheckEnoughEnergyCallback));
@@ -418,8 +374,6 @@ int main (int argc, char *argv[])
                                           MakeCallback (&OnRemainingEnergyChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
                                       MakeCallback (&OnRemainingVoltageChange));
-  // radioEnergy->TraceConnectWithoutContext("TotalEnergyConsumption",
-  //                                         MakeCallback(&OnDeviceEnergyConsumption));
   deviceModels.Get(0)->TraceConnectWithoutContext("TotalEnergyConsumption",
                                            MakeCallback(&OnDeviceEnergyConsumption));
 
