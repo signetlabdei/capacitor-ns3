@@ -328,7 +328,7 @@ int main (int argc, char *argv[])
   Ptr<CapacitorEnergySource> capacitor = CreateObject<CapacitorEnergySource>();
   capacitor->SetAttribute ("Capacity", DoubleValue(capacity));
   capacitor->SetAttribute ("CapacitorLowVoltageThreshold", DoubleValue(0.2));
-  capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.9));
+  capacitor->SetAttribute ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitor->SetAttribute ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
   capacitor->SetAttribute ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
   capacitor-> SetAttribute("PeriodicVoltageUpdateInterval", TimeValue(MilliSeconds(600)));
@@ -338,7 +338,7 @@ int main (int argc, char *argv[])
   // radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.01));
   radioEnergy-> SetAttribute ("SleepCurrentA", DoubleValue (0.0000015));
   radioEnergy-> SetAttribute ("RxCurrentA", DoubleValue (0.0112));
-  radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(false));
+  radioEnergy-> SetAttribute("EnterSleepIfDepleted", BooleanValue(true));
   radioEnergy->SetAttribute ("TurnOnDuration", TimeValue (Seconds(0.2)));
 
   Ptr<ConstantLoraTxCurrentModel> constantloratx;

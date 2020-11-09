@@ -47,6 +47,7 @@ LoraRadioEnergyModel::GetTypeId (void)
           .SetParent<DeviceEnergyModel> ()
           .SetGroupName ("Energy")
           .AddConstructor<LoraRadioEnergyModel> ()
+          // Values from Casals, Modeling the energy Performance of LoRaWAN
           .AddAttribute ("StandbyCurrentA", "The default radio Standby current in Ampere.",
                          DoubleValue (0.0014), // idle mode = 1.4mA
                          MakeDoubleAccessor (&LoraRadioEnergyModel::SetStandbyCurrentA,
@@ -438,8 +439,11 @@ LoraRadioEnergyModel::HandleEnergyRecharged (void)
   Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
   if (edPhy->GetState () == EndDeviceLoraPhy::OFF)
     {
-      edPhy->SwitchToTurnOn ();
-      Simulator::Schedule (m_turnOnDuration, &EndDeviceLoraPhy::SwitchToSleep, edPhy);
+      bool switchOk = edPhy->SwitchToTurnOn ();
+      if (switchOk)
+        {
+          Simulator::Schedule (m_turnOnDuration, &EndDeviceLoraPhy::SwitchToSleep, edPhy);
+        }
     }
   else
     {

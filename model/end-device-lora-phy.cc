@@ -120,7 +120,7 @@ EndDeviceLoraPhy::SetFrequency (double frequencyMHz)
   m_frequency = frequencyMHz;
 }
 
-void
+bool
 EndDeviceLoraPhy::SwitchToSleep (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -132,28 +132,26 @@ EndDeviceLoraPhy::SwitchToSleep (void)
   if (m_state == OFF)
     {
       NS_LOG_DEBUG("Not switching to sleep because in OFF state");
-      return;
+      return false;
     }
 
   if (m_state == SLEEP)
     {
       NS_LOG_DEBUG ("Device already in SLEEP state");
-      return;
+      return true;
     }
 
-   if (IsEnergyStateOk ())
-      {
-        m_state = SLEEP;
+  m_state = SLEEP;
 
-        // Notify listeners of the state change
-        for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-          {
-            (*i)->NotifySleep ();
-          }
-      }
+  // Notify listeners of the state change
+  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+    {
+      (*i)->NotifySleep ();
+    }
+  return true;
 }
 
-void
+bool
 EndDeviceLoraPhy::SwitchToStandby (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -167,11 +165,13 @@ EndDeviceLoraPhy::SwitchToStandby (void)
         {
           (*i)->NotifyStandby ();
         }
+      return true;
     }
+  return false;
 
 }
 
-void
+bool
 EndDeviceLoraPhy::SwitchToRx (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -187,11 +187,12 @@ EndDeviceLoraPhy::SwitchToRx (void)
         {
           (*i)->NotifyRxStart ();
         }
+      return true;
     }
-
+  return false;
 }
 
-void
+bool 
 EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -208,11 +209,13 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
             NS_LOG_DEBUG ("Notify tx start");
             (*i)->NotifyTxStart (txPowerDbm);
           }
+        return true;
       }
+  return false;
 
 }
 
-void
+bool 
 EndDeviceLoraPhy::SwitchToIdle (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -230,11 +233,12 @@ EndDeviceLoraPhy::SwitchToIdle (void)
           {
             (*i)->NotifyIdle ();
           }
+        return true;
       }
-
+  return false;
 }
 
-void
+bool 
 EndDeviceLoraPhy::SwitchToOff (void)
 {
   NS_LOG_FUNCTION (this);
@@ -243,7 +247,7 @@ EndDeviceLoraPhy::SwitchToOff (void)
     {
       NS_LOG_DEBUG ("Trying to switch to OFF, but the ED is already in OFF!");
       // TODO callback to keep trace of some failure
-      return;
+      return true;
     }
 
   m_state = OFF;
@@ -253,9 +257,10 @@ EndDeviceLoraPhy::SwitchToOff (void)
     {
       (*i)->NotifyOff ();
     }
+  return true;
 }
 
-void
+bool 
 EndDeviceLoraPhy::SwitchToTurnOn (void)
 {
   NS_LOG_FUNCTION (this);
@@ -266,13 +271,15 @@ EndDeviceLoraPhy::SwitchToTurnOn (void)
     // We won't need to enter in KO state, but this updates the energy source
     {
       m_state = TURNON;
-    }
 
-  // Notify listeners of the state change
-  for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-    {
-      (*i)->NotifyTurnOn ();
+      // Notify listeners of the state change
+      for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
+        {
+          (*i)->NotifyTurnOn ();
+        }
+      return true;
     }
+  return false;
 }
 
 EndDeviceLoraPhy::State

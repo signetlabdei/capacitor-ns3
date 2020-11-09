@@ -238,27 +238,27 @@ public:
   /**
    * SwitchToIdle.
    */
-  void SwitchToIdle (void);
+  bool SwitchToIdle (void);
 
   /**
    * Switch to the STANDBY state.
    */
-  void SwitchToStandby (void);
+  bool SwitchToStandby (void);
 
   /**
    * Switch to the SLEEP state.
    */
-  void SwitchToSleep (void);
+  bool SwitchToSleep (void);
 
   /**
    * Switch to the OFF state.
    */
-  void SwitchToOff (void);
+  bool SwitchToOff (void);
 
   /**
    * Turining ON the device
    */
-  void SwitchToTurnOn (void);
+  bool SwitchToTurnOn (void);
 
       /**
    * Add the input listener to the list of objects to be notified of PHY-level
@@ -283,12 +283,12 @@ protected:
   /**
    * Switch to the RX state
    */
-  void SwitchToRx ();
+  bool SwitchToRx ();
 
   /**
    * Switch to the TX state
    */
-  void SwitchToTx (double txPowerDbm);
+  bool SwitchToTx (double txPowerDbm);
 
   /**
    * Before switching to a new state, update the energy source, which will go to

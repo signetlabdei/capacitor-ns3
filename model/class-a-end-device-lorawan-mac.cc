@@ -275,16 +275,20 @@ ClassAEndDeviceLorawanMac::TxFinished (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  // Schedule the opening of the first receive window
-  Simulator::Schedule (m_receiveDelay1,
-                       &ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow, this);
-
-  // Schedule the opening of the second receive window
-  m_secondReceiveWindow = Simulator::Schedule (m_receiveDelay2,
-                                               &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow, this);
-
   // Switch the PHY to IDLE (waiting time before RX1)
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToIdle ();
+  bool switchOk = m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToIdle ();
+
+  // Schedule receive windows only if we were able to switch to idle mode
+  if (switchOk)
+    {
+      // Schedule the opening of the first receive window
+      Simulator::Schedule (m_receiveDelay1, &ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow,
+                           this);
+
+      // Schedule the opening of the second receive window
+      m_secondReceiveWindow = Simulator::Schedule (
+          m_receiveDelay2, &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow, this);
+    }
 }
 
 void
@@ -293,7 +297,7 @@ ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow (void)
   NS_LOG_FUNCTION_NOARGS ();
 
   // Set Phy in Standby mode
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
+  bool switchOk = m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
 
   //Calculate the duration of a single symbol for the first receive window DR
   double tSym = pow (2, GetSfFromDataRate (GetFirstReceiveWindowDataRate ())) / GetBandwidthFromDataRate ( GetFirstReceiveWindowDataRate ());
@@ -301,8 +305,12 @@ ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow (void)
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
   // (LoraWAN specification)
-  m_closeFirstWindow = Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols*tSym),
-                                            &ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow, this); //m_receiveWindowDuration
+  if (switchOk)
+    {
+      m_closeFirstWindow = Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols * tSym),
+                                                &ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow,
+                                                this); //m_receiveWindowDuration
+    }
 
 }
 
@@ -366,7 +374,7 @@ ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow (void)
     }
 
   // Set Phy in Standby mode
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
+  bool switchOk = m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToStandby ();
 
   // Switch to appropriate channel and data rate
   NS_LOG_INFO ("Using parameters: " << m_secondReceiveWindowFrequency << "Hz, DR"
@@ -383,8 +391,12 @@ ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow (void)
   // Schedule return to sleep after "at least the time required by the end
   // device's radio transceiver to effectively detect a downlink preamble"
   // (LoraWAN specification)
-  m_closeSecondWindow = Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols*tSym),
-                                             &ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow, this);
+  if (switchOk)
+    {
+      m_closeSecondWindow =
+          Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols * tSym),
+                               &ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow, this);
+    }
 
 }
 
