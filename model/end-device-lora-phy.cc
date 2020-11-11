@@ -311,16 +311,22 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
   EndDeviceLoraPhy::IsEnergyStateOk (void)
   {
     NS_LOG_FUNCTION (this);
-    Ptr<EnergySource> nodeEnergySource =
-        m_device->GetNode ()->GetObject<EnergySourceContainer> ()->Get (0);
+    Ptr<EnergySourceContainer> nodeEnergySourceContainer =
+        m_device->GetNode ()->GetObject<EnergySourceContainer> ();
+    if (nodeEnergySourceContainer == 0)
+      {
+        NS_LOG_DEBUG ("Energy source not found - return true");
+        return true;
+      }
 
+    Ptr<EnergySource> nodeEnergySource = nodeEnergySourceContainer -> Get(0);
+    nodeEnergySource->UpdateEnergySource ();
     // If CapacitorEnergySource
     Ptr<CapacitorEnergySource> capacitorEnergySource =
         nodeEnergySource->GetObject<CapacitorEnergySource> ();
     if (!(capacitorEnergySource == 0))
       {
         NS_LOG_DEBUG ("found capacitorEnergySource pointer");
-        capacitorEnergySource->UpdateEnergySource ();
         if (capacitorEnergySource->IsDepleted ())
           {
             NS_LOG_DEBUG ("Capacitor energy depleted");
