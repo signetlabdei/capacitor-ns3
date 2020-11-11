@@ -59,11 +59,14 @@ double capacity = 0.006;
 double simTime = 100;
 double appPeriod = 10;
 bool enableVariableHarvester = false;
+bool sun = true;
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
 std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
-std::string filenameHarvester = "../outputixys.csv";
+std::string pathToInputFile = "/home/marty/work/ua/panels_data";
+std::string filenameHarvesterSun = "/outputixys.csv";
+std::string filenameHarvesterCloudy = "/outputixys_cloudy.csv";
 bool energyConsumptionCallbackFirstCall = true;
 bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
@@ -187,10 +190,15 @@ int main (int argc, char *argv[])
 
   // Inputs
   CommandLine cmd;
+  cmd.AddValue ("pathToInputFile",
+                "Absolute path till the input file for the varaible energy harvester",
+                pathToInputFile);
   cmd.AddValue ("capacity", "Capacity", capacity);
   cmd.AddValue ("simTime", "Simulation time [s]", simTime);
   cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
-  cmd.AddValue("EnableVariableHarvester", "Enable harvester from input file", enableVariableHarvester);
+  cmd.AddValue ("EnableVariableHarvester", "Enable harvester from input file",
+                 enableVariableHarvester);
+  cmd.AddValue ("sun", "Input from sunny day", sun);
   cmd.Parse (argc, argv);
 
   // Set up logging
@@ -226,6 +234,16 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
 
+  // Select input file
+  std::string filenameHarvester;
+  if (sun)
+    {
+      filenameHarvester = pathToInputFile + filenameHarvesterSun;
+    }
+  else
+    {
+      filenameHarvester = pathToInputFile + filenameHarvesterCloudy;
+    }
   /************************
   *  Create the channel  *
   ************************/
@@ -361,9 +379,9 @@ int main (int argc, char *argv[])
 
   // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
   if (enableVariableHarvester)
-    {
-      EnergyHarvesterContainer harvesters = variableEhHelper.Install (sources);
-    }
+  {
+    EnergyHarvesterContainer harvesters = variableEhHelper.Install (sources);
+  }
 
   // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
   // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
