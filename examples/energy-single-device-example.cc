@@ -39,6 +39,7 @@
 #include "ns3/config.h"
 #include "ns3/string.h"
 #include "src/core/model/config.h"
+#include "src/lorawan/helper/variable-energy-harvester-helper.h"
 #include "src/lorawan/model/capacitor-energy-source.h"
 #include "src/lorawan/helper/capacitor-energy-source-helper.h"
 #include "src/lorawan/model/lora-tx-current-model.h"
@@ -57,10 +58,12 @@ NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 double capacity = 0.006;
 double simTime = 100;
 double appPeriod = 10;
+bool enableVariableHarvester = false;
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
 std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
+std::string filenameHarvester = "../outputixys.csv";
 bool energyConsumptionCallbackFirstCall = true;
 bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
@@ -187,13 +190,15 @@ int main (int argc, char *argv[])
   cmd.AddValue ("capacity", "Capacity", capacity);
   cmd.AddValue ("simTime", "Simulation time [s]", simTime);
   cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
+  cmd.AddValue("EnableVariableHarvester", "Enable harvester from input file", enableVariableHarvester);
   cmd.Parse (argc, argv);
 
   // Set up logging
-  // LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
+  LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
+  LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
@@ -327,19 +332,24 @@ int main (int argc, char *argv[])
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
   radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds(0.2)));
 
-  //  // Energy harvesting
-  BasicEnergyHarvesterHelper harvesterHelper;
-  harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-                       TimeValue (MilliSeconds(500)));
-  // Visconti, Paolo, et al."An overview on state-of-art energy harvesting
-  //     techniques and choice criteria: a wsn node for goods transport and
-  //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res
-  //     7(2017) : 1281 - 1295.
-  // Let's assume we are OUTDOOR, and the surface we are provided is 2 cm2
-  double minPowerDensity = 0.000001; // 30e-3;
-  double maxPowerDensity = 0.00001; // 0.30e-3;
-  std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
-  harvesterHelper.Set ("HarvestablePower", StringValue (power));
+  //  // Basic Energy harvesting
+  // BasicEnergyHarvesterHelper harvesterHelper;
+  // harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
+  //                      TimeValue (MilliSeconds(500)));
+  // // Visconti, Paolo, et al."An overview on state-of-art energy harvesting
+  // //     techniques and choice criteria: a wsn node for goods transport and
+  // //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res
+  // //     7(2017) : 1281 - 1295.
+  // // Let's assume we are OUTDOOR, and the surface we are provided is 2 cm2
+  // double minPowerDensity = 0.000001; // 30e-3;
+  // double maxPowerDensity = 0.00001; // 0.30e-3;
+  // std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
+  // harvesterHelper.Set ("HarvestablePower", StringValue (power));
+
+  // // Variable energy harvesting
+  VariableEnergyHarvesterHelper variableEhHelper;
+  variableEhHelper.Set("Filename", StringValue(filenameHarvester));
+
 
   // install source on EDs' nodes
   EnergySourceContainer sources = capacitorHelper.Install (endDevices);
@@ -349,7 +359,11 @@ int main (int argc, char *argv[])
 
   Names::Add ("/Names/EnergySource", sources.Get(0));
 
-  EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
+  // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
+  if (enableVariableHarvester)
+    {
+      EnergyHarvesterContainer harvesters = variableEhHelper.Install (sources);
+    }
 
   // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
   // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);

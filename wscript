@@ -51,6 +51,7 @@ def build(bld):
         'model/lora-utils.cc',
         'model/adr-component.cc',
         'model/hex-grid-position-allocator.cc',
+        'model/variable-energy-harvester.cc',
         'helper/lora-radio-energy-model-helper.cc',
         'helper/lora-helper.cc',
         'helper/lora-phy-helper.cc',
@@ -60,6 +61,7 @@ def build(bld):
         'helper/forwarder-helper.cc',
         'helper/network-server-helper.cc',
         'helper/capacitor-energy-source-helper.cc',
+        'helper/variable-energy-harvester-helper.cc',
         'helper/lora-packet-tracker.cc',
         'test/utilities.cc',
         ]
@@ -114,6 +116,7 @@ def build(bld):
         'model/lora-utils.h',
         'model/adr-component.h',
         'model/hex-grid-position-allocator.h',
+        'model/variable-energy-harvester.h',
         'helper/lora-radio-energy-model-helper.h',
         'helper/lora-helper.h',
         'helper/lora-phy-helper.h',
@@ -123,6 +126,7 @@ def build(bld):
         'helper/forwarder-helper.h',
         'helper/network-server-helper.h',
         'helper/capacitor-energy-source-helper.h',
+        'helper/variable-energy-harvester-helper.h',
         'helper/lora-packet-tracker.h',
         'test/utilities.h',
         ]
