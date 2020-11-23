@@ -88,6 +88,7 @@ public:
   /* Set callbacks */
   void SetEnergyDepletionCallback (LoraRadioEnergyModel::LoraRadioEnergyDepletionCallback callback);
   void SetEnergyRechargedCallback (LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback callback);
+  void SetEnergyChangedCallback (LoraRadioEnergyModel::LoraRadioEnergyChangedCallback callback);
 
 private:
   /**
@@ -105,6 +106,7 @@ private:
   ObjectFactory m_txCurrentModel; ///< transmit current model
   LoraRadioEnergyModel::LoraRadioEnergyDepletionCallback m_energyDepletionCallback;
   LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback m_energyRechargedCallback;
+  LoraRadioEnergyModel::LoraRadioEnergyChangedCallback m_energyChangedCallback;
 };
 
 } // namespace ns3

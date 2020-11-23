@@ -81,10 +81,19 @@ LoraRadioEnergyModelHelper::SetEnergyDepletionCallback (
 }
 
   void
-  LoraRadioEnergyModelHelper::SetEnergyRechargedCallback (LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback callback)
+  LoraRadioEnergyModelHelper::SetEnergyRechargedCallback (
+     LoraRadioEnergyModel::LoraRadioEnergyRechargedCallback callback)
   {
     // NS_LOG_FUNCTION (this);
-    m_energyDepletionCallback = callback;
+    m_energyRechargedCallback = callback;
+  }
+
+  void
+  LoraRadioEnergyModelHelper::SetEnergyChangedCallback (
+      LoraRadioEnergyModel::LoraRadioEnergyChangedCallback callback)
+  {
+    // NS_LOG_FUNCTION (this);
+    m_energyChangedCallback = callback;
   }
 
 /*

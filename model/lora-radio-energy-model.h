@@ -152,6 +152,11 @@ public:
   typedef Callback<void> LoraRadioEnergyRechargedCallback;
 
   /**
+   * Callback type for energy changed handling.
+   */
+  typedef Callback<void, double> LoraRadioEnergyChangedCallback;
+
+  /**
    * \brief Get the type ID.
    * \return the object TypeId
    */
@@ -225,6 +230,9 @@ public:
    * Sets callback for energy recharged handling.
    */
   void SetEnergyRechargedCallback (LoraRadioEnergyRechargedCallback callback);
+
+  void SetEnergyChangedCallback (LoraRadioEnergyChangedCallback callback);
+
 
   /**
    * \param model the model used to compute the lora tx current.
@@ -327,11 +335,10 @@ private:
 
   bool m_enterSleepIfDepleted = false; // default: turn off
 
-  /// Energy depletion callback
+  /// Energy  callback
   LoraRadioEnergyDepletionCallback m_energyDepletionCallback;
-
-  /// Energy recharged callback
   LoraRadioEnergyRechargedCallback m_energyRechargedCallback;
+  LoraRadioEnergyChangedCallback m_energyChangedCallback;
 
   /// EndDeviceLoraPhy listener
   LoraRadioEnergyModelPhyListener *m_listener;

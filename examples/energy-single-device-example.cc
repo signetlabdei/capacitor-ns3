@@ -28,6 +28,7 @@
 #include "ns3/node-container.h"
 #include "ns3/position-allocator.h"
 #include "ns3/periodic-sender-helper.h"
+#include "ns3/energy-aware-sender-helper.h"
 #include "ns3/command-line.h"
 #include "ns3/basic-energy-source-helper.h"
 #include "ns3/basic-energy-harvester-helper.h"
@@ -60,6 +61,7 @@ double simTime = 100;
 double appPeriod = 10;
 bool enableVariableHarvester = false;
 bool sun = true;
+bool energyAwareSender = false;
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
@@ -196,29 +198,32 @@ int main (int argc, char *argv[])
   cmd.AddValue ("capacity", "Capacity", capacity);
   cmd.AddValue ("simTime", "Simulation time [s]", simTime);
   cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
-  cmd.AddValue ("EnableVariableHarvester", "Enable harvester from input file",
+  cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
                  enableVariableHarvester);
   cmd.AddValue ("sun", "Input from sunny day", sun);
+  cmd.AddValue ("energyAwareSender", "Send packet when energy allows it", energyAwareSender);
   cmd.Parse (argc, argv);
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
-  LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
+  // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
-  // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
@@ -328,10 +333,23 @@ int main (int argc, char *argv[])
    *  Install applications on the end devices  *
    *********************************************/
 
-  PeriodicSenderHelper periodicSenderHelper;
-  periodicSenderHelper.SetPeriod (Seconds (appPeriod));
-
-  periodicSenderHelper.Install (endDevices);
+  if (energyAwareSender)
+    {
+      EnergyAwareSenderHelper energyAwareSenderHelper;
+      double voltageTh = 0.2;
+      double energyTh = capacity * pow (voltageTh, 2) / 2;
+      energyAwareSenderHelper.SetEnergyThreshold (energyTh); // (0.29);
+      energyAwareSenderHelper.SetMinInterval (Seconds (appPeriod));
+      energyAwareSenderHelper.SetPacketSize (19);
+      energyAwareSenderHelper.Install (endDevices);
+    }
+  else
+    {
+      PeriodicSenderHelper periodicSenderHelper;
+      periodicSenderHelper.SetPeriod (Seconds (appPeriod));
+      periodicSenderHelper.SetPacketSize (16);
+      periodicSenderHelper.Install (endDevices);
+    }
 
   /************************
    * Install Energy Model *
@@ -340,15 +358,16 @@ int main (int argc, char *argv[])
 
   CapacitorEnergySourceHelper capacitorHelper;
   capacitorHelper.Set ("Capacity", DoubleValue (capacity));
-  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.4));
+  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.2));
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
   capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
 
   LoraRadioEnergyModelHelper radioEnergy;
-  radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
-  radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds(0.2)));
+  radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(true));
+  radioEnergy.Set ("TurnOnDuration",
+                   TimeValue (Seconds (0.2)));
 
   //  // Basic Energy harvesting
   // BasicEnergyHarvesterHelper harvesterHelper;
@@ -458,7 +477,20 @@ int main (int argc, char *argv[])
       // Set the initial sleep state
       outputFile << 0 << " " << 0 << std::endl;
       NS_LOG_DEBUG ("Append initially not enough energy, because never called");
-      stateChangeCallbackFirstCall = false;
+      energyConsumptionCallbackFirstCall = false;
+      outputFile.close ();
+    }
+
+  if (enoughEnergyCallbackFirstCall)
+    {
+      const char *c = filenameEnoughEnergy.c_str ();
+      std::ofstream outputFile;
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      // Set the initial
+      outputFile << 0 << " " << 0 << std::endl;
+      NS_LOG_DEBUG ("Append initially not enough energy, because never called");
+      enoughEnergyCallbackFirstCall = false;
       outputFile.close ();
     }
 
