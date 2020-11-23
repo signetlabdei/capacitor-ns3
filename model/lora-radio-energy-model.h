@@ -310,6 +310,7 @@ private:
   double m_turnOnCurrentA; // current when turning on
   double m_referenceVoltage; // used with the current to determine the load
   Time m_turnOnDuration;
+  double m_sensingEnergy; // Constant energy cost due to sensing before TX
   // NOTICE VERY WELL: Current  Model linear or constant as possible choices
   Ptr<LoraTxCurrentModel> m_txCurrentModel; ///< current model
 

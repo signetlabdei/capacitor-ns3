@@ -94,6 +94,10 @@ LoraRadioEnergyModel::GetTypeId (void)
               "EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
               BooleanValue (), MakeBooleanAccessor (&LoraRadioEnergyModel::m_enterSleepIfDepleted),
               MakeBooleanChecker ())
+          .AddAttribute ("SensingEnergy", "The constant amount of energy spent for sensing",
+                         DoubleValue (0),
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::m_sensingEnergy),
+                         MakeDoubleChecker<double> ())
           .AddTraceSource (
               "TotalEnergyConsumption", "Total energy consumption of the radio device.",
               MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
@@ -335,6 +339,12 @@ LoraRadioEnergyModel::ChangeState (int newState)
   double energyToDecrease = 0.0;
 
   energyToDecrease = ComputeLoraEnergyConsumption (m_currentState, duration);
+
+  if (newState == EndDeviceLoraPhy::State::TX)
+    {
+      energyToDecrease += m_sensingEnergy;
+      NS_LOG_DEBUG ("Also decrease " << m_sensingEnergy << " J spent in sensing");
+    }
 
   // update total energy consumption
   m_totalEnergyConsumption += energyToDecrease;
