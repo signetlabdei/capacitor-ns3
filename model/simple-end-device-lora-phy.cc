@@ -246,17 +246,22 @@ SimpleEndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
           {
             // Switch to RX state
             // EndReceive will handle the switch back to STANDBY state
-            SwitchToRx ();
+            if( SwitchToRx ())
+              {
 
-            // Schedule the end of the reception of the packet
-            NS_LOG_INFO ("Scheduling reception of a packet. End in " <<
-                         duration.GetSeconds () << " seconds");
+                // Schedule the end of the reception of the packet
+                NS_LOG_INFO ("Scheduling reception of a packet. End in " << duration.GetSeconds ()
+                                                                         << " seconds");
 
-            Simulator::Schedule (duration, &LoraPhy::EndReceive, this, packet,
-                                 event);
+                Simulator::Schedule (duration, &LoraPhy::EndReceive, this, packet, event);
 
-            // Fire the beginning of reception trace source
-            m_phyRxBeginTrace (packet);
+                // Fire the beginning of reception trace source
+                m_phyRxBeginTrace (packet);
+              }
+            else
+              {
+                NS_LOG_DEBUG ("Not enough energy to switch to RX state");
+              }
           }
       }
     }
