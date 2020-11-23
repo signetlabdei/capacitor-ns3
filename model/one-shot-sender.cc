@@ -37,9 +37,13 @@ TypeId
 OneShotSender::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::OneShotSender")
-    .SetParent<Application> ()
-    .AddConstructor<OneShotSender> ()
-    .SetGroupName ("lorawan");
+                          .SetParent<Application> ()
+                          .AddConstructor<OneShotSender> ()
+                          .SetGroupName ("lorawan")
+  .AddAttribute ("PacketSize", "Packet size",
+                 IntegerValue (10),
+                 MakeIntegerAccessor (&OneShotSender::m_packetSize),
+                 MakeIntegerChecker<int> ());
   return tid;
 }
 
@@ -73,7 +77,7 @@ OneShotSender::SendPacket (void)
   NS_LOG_FUNCTION (this);
 
   // Create and send a new packet
-  Ptr<Packet> packet = Create<Packet> (10);
+  Ptr<Packet> packet = Create<Packet> (m_packetSize);
   m_mac->Send (packet);
 }
 

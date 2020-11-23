@@ -58,6 +58,9 @@ public:
    */
   void StopApplication (void);
 
+public:
+  int m_packetSize; 
+  
 private:
   /**
    * The time at which to send the packet.
