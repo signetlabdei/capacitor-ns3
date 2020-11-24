@@ -469,6 +469,11 @@ private:
   EventId m_nextTx;
 
   /**
+   * The event of a packet that will be re-transmitted in the future
+   */
+  EventId m_postponedTx;
+
+  /**
    * The event of transmitting a packet in a consecutive moment, when the duty cycle let us transmit.
    *
    * This Event is used to cancel the transmission of this packet if a newer packet is delivered from the application to be sent.

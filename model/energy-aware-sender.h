@@ -79,6 +79,8 @@ public:
    */
   void StopApplication (void);
 
+  void PhyStartedSendingCallback (Ptr<Packet const> packet, uint32_t id);
+
 private:
   void EnergyAwareSendPacketCallback (double);
 
@@ -88,6 +90,7 @@ private:
   Time m_interval;
   Time m_sendTime;
   bool m_firstSending;
+    bool m_tryingToSend;
 
 
   /**

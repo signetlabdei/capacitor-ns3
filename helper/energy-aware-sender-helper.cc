@@ -22,6 +22,7 @@
 #include "ns3/energy-aware-sender-helper.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/energy-aware-sender.h"
+#include "ns3/lora-net-device.h"
 #include "ns3/double.h"
 #include "ns3/string.h"
 #include "ns3/trace-source-accessor.h"
@@ -91,6 +92,8 @@ EnergyAwareSenderHelper::InstallPriv (Ptr<Node> node) const
 
   app->SetNode (node);
   node->AddApplication (app);
+
+  node->GetDevice(0)->GetObject<LoraNetDevice> ()->GetPhy()->TraceConnectWithoutContext("StartSending", MakeCallback(&EnergyAwareSender::PhyStartedSendingCallback, app));
 
   return app;
 }

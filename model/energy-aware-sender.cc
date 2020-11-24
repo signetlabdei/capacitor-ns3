@@ -64,9 +64,9 @@ namespace ns3 {
       : m_energyThreshold (0),
         m_sendTime (Seconds(0)),
         m_firstSending(true),
+        m_tryingToSend (false),
         m_basePktSize (10),
         m_pktSizeRV (0)
-
     {
       NS_LOG_FUNCTION_NOARGS ();
     }
@@ -139,6 +139,8 @@ namespace ns3 {
 
       NS_LOG_DEBUG ("Sent a packet of size " << packet->GetSize () << " m_sendTime (s) "
                                              << m_sendTime.GetSeconds ());
+      m_tryingToSend = true;
+
       m_mac->Send (packet);
 
       // Schedule the next SendPacket event
@@ -195,12 +197,16 @@ namespace ns3 {
     EnergyAwareSender::EnergyAwareSendPacketCallback (double newEnergy)
     {
       // Send packet only if a time has passed
-      if (m_firstSending == 1 || (Simulator::Now() - m_sendTime > m_interval))
+      if (m_firstSending == 1 || (Simulator::Now () - m_sendTime > m_interval))
         {
-          if (newEnergy >= m_energyThreshold)
+          if (m_tryingToSend)
+            {
+              NS_LOG_DEBUG ("We are already trying to send a packet");
+            }
+          else if (newEnergy >= m_energyThreshold)
             {
               NS_LOG_DEBUG ("Enough Energy to send a packet");
-              SendPacket();
+              SendPacket ();
               m_firstSending = 0;
             }
           else
@@ -212,6 +218,13 @@ namespace ns3 {
         {
           NS_LOG_DEBUG ("Enough Energy to send a packet, but too frequent");
         }
+    }
+
+    void
+    EnergyAwareSender::PhyStartedSendingCallback (Ptr<Packet const> packet, uint32_t id)
+    {
+      NS_LOG_FUNCTION (packet << id);
+      m_tryingToSend = false;
     }
   }
 }
