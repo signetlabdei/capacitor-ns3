@@ -60,6 +60,8 @@ SimpleEndDeviceLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
 
   NS_LOG_INFO ("Current state: " << m_state);
 
+  m_emptyCallback();
+
   // We must be either in STANDBY or SLEEP mode to send a packet
   if (m_state != STANDBY && m_state != SLEEP)
     {

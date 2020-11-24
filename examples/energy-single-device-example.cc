@@ -84,6 +84,12 @@ OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
 }
 
 void
+OnEmptyCallback (void)
+{
+  NS_LOG_DEBUG ("Called an empty callback");
+}
+
+void
 OnDeviceEnergyConsumption (double oldvalue, double energyConsumption)
 {
   const char *c = filenameEnergyConsumption.c_str ();
@@ -421,6 +427,8 @@ int main (int argc, char *argv[])
                                        MakeCallback(&CheckEnoughEnergyCallback));
   myEDphy -> TraceConnectWithoutContext("EndDeviceState",
                                         MakeCallback (&OnEndDeviceStateChange));
+  myEDphy -> TraceConnectWithoutContext("EmptyExampleCallback",
+                                        MakeCallback (&OnEmptyCallback));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
                                           MakeCallback (&OnRemainingEnergyChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
