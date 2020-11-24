@@ -94,7 +94,7 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
       m_dataRate = m_dataRate - 1;
     }
 
-  // Craft LoraTxParameters object
+  // // Craft LoraTxParameters object
   LoraTxParameters params;
   params.sf = GetSfFromDataRate (m_dataRate);
   params.headerDisabled = m_headerDisabled;
@@ -103,6 +103,16 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
   params.nPreamble = m_nPreambleSymbols;
   params.crcEnabled = 1;
   params.lowDataRateOptimizationEnabled = 0;
+
+  // FOR MODEL COMPARISON Modify to compare with the model
+  // LoraTxParameters params;
+  // params.sf = GetSfFromDataRate (m_dataRate);
+  // params.headerDisabled = 1;
+  // params.codingRate = 4/5;
+  // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+  // params.nPreamble = 8;
+  // params.crcEnabled = 1;
+  // params.lowDataRateOptimizationEnabled = 0;
 
   // Wake up PHY layer and directly send the packet
 
@@ -117,6 +127,8 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
 
   // Compute packet duration
   Time duration = m_phy->GetOnAirTime (packetToSend, params);
+
+  NS_LOG_DEBUG("++ PACKET DURATION ++" << duration.GetSeconds());
 
   // Register the sent packet into the DutyCycleHelper
   m_channelHelper.AddEvent (duration, txChannel);

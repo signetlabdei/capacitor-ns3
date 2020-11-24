@@ -59,7 +59,7 @@ NS_LOG_COMPONENT_DEFINE ("ModelComparisonEnergy");
 
 // Inputs
 double capacity = 0.006;
-double simTime = 3;
+double simTime = 5;
 double appPeriod = 10;
 int packetSize = 10;
 double eh = 0.001;
@@ -140,7 +140,7 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("ModelComparisonEnergy", LOG_LEVEL_ALL);
-  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
@@ -154,7 +154,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -165,7 +165,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("LoraPhyHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMacHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("OneShotSenderHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
+  // LogComponentEnable ("OneShotSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("PeriodicSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSenderHelper", LOG_LEVEL_ALL);
@@ -310,13 +310,13 @@ int main (int argc, char *argv[])
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (3.3));
-  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
+  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (1)));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
   radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds(0.2)));
   // Values from datasheet 
-  radioEnergy.Set ("TxCurrentA", DoubleValue (0.100)); // check - there are different values
+  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
   radioEnergy.Set ("RxCurrentA", DoubleValue (0.011));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000001));
