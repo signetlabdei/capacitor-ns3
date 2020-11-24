@@ -30,6 +30,7 @@
 #include "ns3/lora-channel.h"
 #include "ns3/net-device.h"
 #include "ns3/lora-interference-helper.h"
+#include "ns3/traced-callback.h"
 #include "ns3/traced-value.h"
 #include <list>
 
@@ -274,7 +275,7 @@ protected:
   TracedCallback<Ptr<const Packet>, uint32_t> m_startSending;
 
   typedef void (* EmptyCallback) (void);
-  TracedCallback<> m_emptyCallback;
+  // TracedCallback<> m_emptyCallback;
 
   /**
    * The trace source fired when a packet begins the reception process from the

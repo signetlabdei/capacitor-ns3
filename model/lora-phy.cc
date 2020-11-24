@@ -21,6 +21,7 @@
 #include "ns3/lora-phy.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
+#include "ns3/trace-source-accessor.h"
 #include <algorithm>
 
 namespace ns3 {
@@ -69,11 +70,11 @@ LoraPhy::GetTypeId (void)
                      "could not be correctly received because"
                      "its received power is below the sensitivity of the receiver",
                      MakeTraceSourceAccessor (&LoraPhy::m_underSensitivity),
-                     "ns3::Packet::TracedCallback")
-    .AddTraceSource ("EmptyExampleCallback",
-                     "Trace source with no argument",
-                     MakeTraceSourceAccessor (&LoraPhy::m_emptyCallback),
-                     "ns3::LoraPhy::EmptyCallback");
+                     "ns3::Packet::TracedCallback");
+    // .AddTraceSource ("EmptyExampleCallback",
+    //                  "Trace source with no argument",
+    //                  MakeTraceSourceAccessor (&LoraPhy::m_emptyCallback),
+    //                  "ns3::LoraPhy::EmptyCallback");
   return tid;
 }
 

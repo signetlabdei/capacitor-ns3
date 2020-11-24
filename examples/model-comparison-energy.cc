@@ -64,7 +64,7 @@ double appPeriod = 10;
 int packetSize = 10;
 double eh = 0.001;
 uint8_t dr = 5;
-bool confirmed = true;
+bool confirmed = false;
 bool energyAwareSender = false;
 bool enableVariableHarvester = false;
 bool sun = true;
@@ -77,14 +77,25 @@ std::string filenameHarvesterSun = "/outputixys.csv";
 std::string filenameHarvesterCloudy = "/outputixys_cloudy.csv";
 bool receivedDLCallbackFirstCall = true;
 bool receivedULCallbackFirstCall = true;
+bool ULCycleCompleted = false;
 
-// Callbcks
+    // Callbcks
+    void
+    OnCloseRX2Callback (void)
+{
+  // NS_LOG_DEBUG ("Called an empty callback");
+  std::cout << "0 1" << std::endl;
+  if (!ULCycleCompleted)
+    {
+      ULCycleCompleted = true;
+    }
+}
 
 void
 OnReceivedULPacketCallback (Ptr<Packet const> packet)
 {
   // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingEnergy);
-  std::cout << "0 1" << std::endl;
+  std::cout << "1 1" << std::endl;
   if (receivedULCallbackFirstCall)
     {
       receivedULCallbackFirstCall = false;
@@ -95,7 +106,7 @@ void
 OnReceivedDLPacketCallback (Ptr<Packet const> packet)
 {
   // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingEnergy);
-  std::cout << "1 1" << std::endl;
+  std::cout << "2 1" << std::endl;
   if (receivedDLCallbackFirstCall)
     {
       receivedDLCallbackFirstCall = false;
@@ -389,7 +400,8 @@ int main (int argc, char *argv[])
 
   myEDmac->TraceConnectWithoutContext ("ReceivedPacket",
                                        MakeCallback(&OnReceivedDLPacketCallback));
-
+  myEDmac->TraceConnectWithoutContext ("CloseSecondReceiveWindow",
+                                       MakeCallback (&OnCloseRX2Callback));
 
   /****************
   *  Simulation  *
@@ -399,13 +411,17 @@ int main (int argc, char *argv[])
 
   Simulator::Run ();
 
-  if (receivedULCallbackFirstCall)
+  if (!ULCycleCompleted)
     {
       std::cout << "0 0" << std::endl;
     }
-  if (receivedDLCallbackFirstCall)
+  if (receivedULCallbackFirstCall)
     {
       std::cout << "1 0" << std::endl;
+    }
+  if (receivedDLCallbackFirstCall)
+    {
+      std::cout << "2 0" << std::endl;
     }
 
   Simulator::Destroy ();

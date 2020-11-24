@@ -163,6 +163,11 @@ public:
    */
   virtual void OnRxClassParamSetupReq (Ptr<RxParamSetupReq> rxParamSetupReq);
 
+  // Callback
+  typedef void (* EmptyCallback) (void);
+  // TracedCallback<> m_emptyCallback;
+  TracedCallback<> m_closeSecondReceiveWindowCallback;
+
 private:
 
   /**
