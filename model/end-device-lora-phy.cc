@@ -223,21 +223,17 @@ EndDeviceLoraPhy::SwitchToIdle (void)
 
   if (IsEnergyStateOk ())
       {
-        // NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
-        if ((m_state == OFF) || (m_state == STANDBY))
+        NS_ASSERT ((m_state == OFF) || (m_state == STANDBY));
+
+        NS_LOG_DEBUG ("Actually switching to idle");
+        m_state = IDLE;
+
+        // Notify listeners of the state change
+        for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
           {
-
-            NS_LOG_DEBUG ("Actually switching to idle");
-            m_state = IDLE;
-
-            // Notify listeners of the state change
-            for (Listeners::const_iterator i = m_listeners.begin (); i != m_listeners.end (); i++)
-              {
-                (*i)->NotifyIdle ();
-              }
-            return true;
+            (*i)->NotifyIdle ();
           }
-
+        return true;
       }
   return false;
 }
