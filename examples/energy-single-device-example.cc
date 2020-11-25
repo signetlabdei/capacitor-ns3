@@ -368,6 +368,12 @@ int main (int argc, char *argv[])
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(true));
   radioEnergy.Set ("TurnOnDuration",
                    TimeValue (Seconds (0.2)));
+  // Values from datasheet
+  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
+  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011));
+  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000001));
+  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0000014));
 
   //  // Basic Energy harvesting
   // BasicEnergyHarvesterHelper harvesterHelper;

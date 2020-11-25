@@ -328,7 +328,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
   double
   CapacitorEnergySource::ComputeVoltage (double Iload, Time duration)
   {
-    NS_LOG_FUNCTION (this);
+    NS_LOG_FUNCTION (this << " Iload (A): " << Iload << " duration (s): " << duration);
     double ph = GetHarvestersPower ();
     double ri = pow (m_supplyVoltageV, 2) / ph; // limits the power of the harvesters
     double Rload = 0;
