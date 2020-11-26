@@ -15,7 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Davide Magrin <magrinda@dei.unipd.it>
+ * Authors: Davide Magrin <magrinda@dei.unipd.it>
+ *          Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #include "ns3/network-server-helper.h"
@@ -32,7 +33,8 @@ namespace lorawan {
 
 NS_LOG_COMPONENT_DEFINE ("NetworkServerHelper");
 
-NetworkServerHelper::NetworkServerHelper ()
+NetworkServerHelper::NetworkServerHelper () :
+  m_replyPayloadSize (0)
 {
   m_factory.SetTypeId ("ns3::NetworkServer");
   p2pHelper.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));

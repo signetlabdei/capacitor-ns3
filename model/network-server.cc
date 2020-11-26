@@ -20,6 +20,8 @@
  */
 
 #include "ns3/network-server.h"
+#include "ns3/integer.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/net-device.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/packet.h"
@@ -31,6 +33,7 @@
 #include "ns3/node-container.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/mac-command.h"
+#include "ns3/pointer.h"
 
 namespace ns3 {
 namespace lorawan {
@@ -45,6 +48,11 @@ NetworkServer::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::NetworkServer")
     .SetParent<Application> ()
     .AddConstructor<NetworkServer> ()
+    .AddAttribute("ReplyPayloadSize",
+                  "Payload size of the DL packet",
+                  IntegerValue (),
+                  MakeIntegerAccessor(&NetworkServer::SetReplyPayloadSize),
+                  MakeIntegerChecker<int> ())
     .AddTraceSource ("ReceivedPacket",
                      "Trace source that is fired when a packet arrives at the Network Server",
                      MakeTraceSourceAccessor (&NetworkServer::m_receivedPacket),
@@ -54,6 +62,7 @@ NetworkServer::GetTypeId (void)
 }
 
 NetworkServer::NetworkServer () :
+  m_replyPayloadSize (0),
   m_status (Create<NetworkStatus> ()),
   m_controller (Create<NetworkController> (m_status)),
   m_scheduler (Create<NetworkScheduler> (m_status, m_controller))
@@ -146,7 +155,8 @@ NetworkServer::AddNode (Ptr<Node> node)
     loraNetDevice->GetMac ()->GetObject<ClassAEndDeviceLorawanMac> ();
 
   // Update the NetworkStatus about the existence of this node
-  m_status->AddNode (edLorawanMac);
+  m_status->AddNode (edLorawanMac, m_replyPayloadSize);
+  
 }
 
 bool
@@ -185,6 +195,14 @@ Ptr<NetworkStatus>
 NetworkServer::GetNetworkStatus (void)
 {
   return m_status;
+}
+
+void
+NetworkServer::SetReplyPayloadSize (int payloadSize)
+{
+  NS_LOG_FUNCTION(this << payloadSize);
+
+  m_replyPayloadSize = payloadSize;
 }
 
 }

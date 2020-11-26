@@ -73,6 +73,7 @@ public:
    */
   void SetAdr (std::string type);
 
+
 private:
   void InstallComponents (Ptr<NetworkServer> netServer);
   Ptr<Application> InstallPriv (Ptr<Node> node);
@@ -88,6 +89,9 @@ private:
   bool m_adrEnabled;
 
   ObjectFactory m_adrSupportFactory;
+
+  // The payload size of the DL packet
+  int m_replyPayloadSize;
 };
 
 } // namespace ns3

@@ -27,6 +27,7 @@
 #include "ns3/gateway-status.h"
 #include "ns3/lora-device-address.h"
 #include "ns3/network-scheduler.h"
+#include "ns3/packet.h"
 
 #include <iterator>
 
@@ -53,7 +54,8 @@ public:
   /**
    * Add a device to the ones that are tracked by this NetworkStatus object.
    */
-  void AddNode (Ptr<ClassAEndDeviceLorawanMac> edMac);
+  void AddNode (Ptr<ClassAEndDeviceLorawanMac> edMac,
+                int replyPayloadSize);
 
   /**
    * Add this gateway to the list of gateways connected to the network.

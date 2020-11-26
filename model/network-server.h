@@ -35,6 +35,7 @@
 #include "ns3/node-container.h"
 #include "ns3/log.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
+#include "ns3/ptr.h"
 
 namespace ns3 {
 namespace lorawan {
@@ -98,6 +99,10 @@ public:
                 const Address &address);
 
   Ptr<NetworkStatus> GetNetworkStatus (void);
+
+  void SetReplyPayloadSize (int payloadSize);
+
+  int m_replyPayloadSize;
 
 protected:
   Ptr<NetworkStatus> m_status;

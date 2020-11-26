@@ -12,6 +12,7 @@
 #include "ns3/gateway-lora-phy.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/gateway-lorawan-mac.h"
+#include "ns3/integer.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/nstime.h"
@@ -147,18 +148,19 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable("NetworkStatus", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceStatus", LOG_LEVEL_ALL);
   // LogComponentEnable ("NetworkScheduler", LOG_LEVEL_ALL);
   // LogComponentEnable ("NetworkServer", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
@@ -376,6 +378,7 @@ int main (int argc, char *argv[])
 
   // Install the NetworkServer application on the network server
   NetworkServerHelper networkServerHelper;
+  networkServerHelper.SetAttribute ("ReplyPayloadSize", IntegerValue(10));
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.Install (networkServers);
