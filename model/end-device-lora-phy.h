@@ -278,6 +278,11 @@ public:
 
   static const double sensitivity[6]; //!< The sensitivity vector of this device to different SFs
 
+  /**
+   * Before switching to a new state, update the energy source, which will go to
+   * sleep/off state if needed. If everything ok, switch to the state.
+   */
+  bool IsEnergyStateOk (void);
 
 protected:
   /**
@@ -290,11 +295,6 @@ protected:
    */
   bool SwitchToTx (double txPowerDbm);
 
-  /**
-   * Before switching to a new state, update the energy source, which will go to
-   * sleep/off state if needed. If everything ok, switch to the state.
-   */
-  bool IsEnergyStateOk (void);
 
   /**
    * Trace source for when a packet is lost because it was using a SF different from

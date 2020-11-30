@@ -59,7 +59,7 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE ("ModelComparisonEnergy");
 
 // Inputs
-double capacity = 0.006;
+double capacity = 6;
 double simTime = 5;
 double appPeriod = 10;
 int packetSize = 10;
@@ -126,7 +126,7 @@ int main (int argc, char *argv[])
   // cmd.AddValue ("pathToInputFile",
   //               "Absolute path till the input file for the varaible energy harvester",
   //               pathToInputFile);
-  cmd.AddValue ("capacity", "Capacity", capacity);
+  cmd.AddValue ("capacity", "Capacity in mF", capacity);
   cmd.AddValue ("packetSize", "PacketSize", packetSize);
   cmd.AddValue ("dr", "dr", dr);
   cmd.AddValue ("confirmed", "confirmed", confirmed);
@@ -141,7 +141,7 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("ModelComparisonEnergy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
@@ -149,13 +149,13 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_ALL);
   LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
@@ -282,7 +282,7 @@ int main (int argc, char *argv[])
     {
       EnergyAwareSenderHelper energyAwareSenderHelper;
       double voltageTh = 0.3;
-      double energyTh = capacity * pow (voltageTh, 2) / 2;
+      double energyTh = (capacity/1000) * pow (voltageTh, 2) / 2; // capacity in mF
       energyAwareSenderHelper.SetEnergyThreshold (energyTh); // (0.29);
       energyAwareSenderHelper.SetMinInterval (Seconds(appPeriod));
       energyAwareSenderHelper.SetPacketSize (packetSize);
@@ -307,12 +307,12 @@ int main (int argc, char *argv[])
 
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("Capacity", DoubleValue (capacity));
+  capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000)); // capacity in mF
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454));
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (3.3));
-  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (1)));
+  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (Seconds (10)));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
@@ -327,7 +327,7 @@ int main (int argc, char *argv[])
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
   harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-                       TimeValue (Seconds(1)));
+                       TimeValue (Seconds(10)));
   // // Visconti, Paolo, et al."An overview on state-of-art energy harvesting
   // //     techniques and choice criteria: a wsn node for goods transport and
   // //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res

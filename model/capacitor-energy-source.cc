@@ -371,7 +371,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
 
   NS_LOG_DEBUG ("Previous voltage: " << m_actualVoltageV <<
                 " exp= " << exp(-durationS/(Rload*m_capacity)) <<
-                " , new voltage = " << voltage  );
+                " , computed voltage = " << voltage  );
   return voltage;
   }
 
@@ -385,6 +385,9 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
 
     m_actualVoltageV = voltage;
     m_lastUpdateTime = Simulator::Now();
+
+    NS_LOG_INFO ("Duration: " << duration.GetSeconds() <<
+                  " s, new Voltage: " << voltage << " V");
   }
 
 double

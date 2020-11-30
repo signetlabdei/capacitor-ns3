@@ -324,7 +324,10 @@ ClassAEndDeviceLorawanMac::OpenFirstReceiveWindow (void)
   // (LoraWAN specification)
   if (switchOk)
     {
-      m_closeFirstWindow = Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols * tSym),
+      // Stay open for Tpreamble
+      NS_LOG_DEBUG ("Scheduling closing RX1 after "
+                    << (4.25 + m_receiveWindowDurationInSymbols) * tSym << " seconds");
+      m_closeFirstWindow = Simulator::Schedule (Seconds ((4.25+m_receiveWindowDurationInSymbols) * tSym),
                                                 &ClassAEndDeviceLorawanMac::CloseFirstReceiveWindow,
                                                 this); //m_receiveWindowDuration
     }
@@ -409,8 +412,9 @@ ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow (void)
   // (LoraWAN specification)
   if (switchOk)
     {
+      // Stay open for Tpreamble
       m_closeSecondWindow =
-          Simulator::Schedule (Seconds (m_receiveWindowDurationInSymbols * tSym),
+        Simulator::Schedule (Seconds ((4.25+m_receiveWindowDurationInSymbols) * tSym),
                                &ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow, this);
     }
 }
@@ -447,6 +451,11 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
       NS_LOG_DEBUG ("PHY is receiving: Receive will handle the result.");
       return;
     case EndDeviceLoraPhy::STANDBY:
+      if (phy->IsEnergyStateOk ())
+        {
+          // Fire the callback
+          m_closeSecondReceiveWindowCallback ();
+        }
       // Turn PHY layer to sleep
       phy->SwitchToSleep ();
       break;
@@ -495,8 +504,6 @@ ClassAEndDeviceLorawanMac::CloseSecondReceiveWindow (void)
       resetRetransmissionParameters ();
     }
 
-  // Fire the callback
-  m_closeSecondReceiveWindowCallback ();
 }
 
 /////////////////////////

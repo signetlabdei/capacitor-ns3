@@ -158,6 +158,7 @@ EndDeviceLoraPhy::SwitchToStandby (void)
 
   if (IsEnergyStateOk ())
     {
+      NS_LOG_DEBUG ("Actually switching to standby");
       m_state = STANDBY;
 
       // Notify listeners of the state change
