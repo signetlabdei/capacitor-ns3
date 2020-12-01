@@ -251,6 +251,16 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
           params.crcEnabled = 1;
           params.lowDataRateOptimizationEnabled = 0;
 
+          // FOR MODEL COMPARISON Modify to compare with the model
+          // LoraTxParameters params;
+          // params.sf = GetSfFromDataRate (m_dataRate);
+          // params.headerDisabled = 1;
+          // params.codingRate = 1;
+          // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+          // params.nPreamble = 8;
+          // params.crcEnabled = 1;
+          // params.lowDataRateOptimizationEnabled = 0;
+
           Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
           Time duration = m_phy->GetOnAirTime (packet, params);
 

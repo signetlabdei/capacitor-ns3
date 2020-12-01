@@ -154,7 +154,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -308,21 +308,32 @@ int main (int argc, char *argv[])
 
   CapacitorEnergySourceHelper capacitorHelper;
   capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000)); // capacity in mF
-  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454));
+  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
-  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (3.3));
+  // Assumption that the C does not reach full capacity because of some
+  // consumption in the OFF state
+  double E = 3.3; // V
+  double Ioff = 0.0000055;
+  double RLoff = E/Ioff;
+  double ri = pow(E, 2)/eh;
+  double Req_off = RLoff*ri / (RLoff + ri);
+  double V0 = E*Req_off/ri;
+  // NS_LOG_DEBUG ("Initial voltage [V]= " << V0 <<
+  //               " RLoff " << RLoff <<
+  //               " ri " << ri <<
+  //               " R_eq_off " << Req_off);
+  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
   capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (Seconds (10)));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
   radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds(0.2)));
-  // Values from datasheet 
-  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
-  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011));
-  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000001));
-  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0000014));
+  // Values from Carmen
+  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011));
+  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
+  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
+  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
 
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;

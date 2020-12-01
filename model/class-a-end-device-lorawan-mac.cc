@@ -108,7 +108,7 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
   // LoraTxParameters params;
   // params.sf = GetSfFromDataRate (m_dataRate);
   // params.headerDisabled = 1;
-  // params.codingRate = 4/5;
+  // params.codingRate = 1;
   // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
   // params.nPreamble = 8;
   // params.crcEnabled = 1;
@@ -118,6 +118,7 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
 
   Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
 
+  NS_LOG_DEBUG("Header disabled " << params.headerDisabled);
   NS_LOG_DEBUG ("PacketToSend: " << packetToSend);
   m_phy->Send (packetToSend, params, txChannel->GetFrequency (), m_txPower);
 
