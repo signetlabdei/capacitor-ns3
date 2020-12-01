@@ -190,7 +190,7 @@ public:
   double GetCurrent (EndDeviceLoraPhy::State status);
 
   double GetStandbyCurrentA (void) const;
-  void SetStandbyCurrentA (double idleCurrentA);
+  void SetStandbyCurrentA (double standbyCurrentA);
 
   double GetTxCurrentA (void) const;
   void SetTxCurrentA (double txCurrentA);
@@ -314,6 +314,7 @@ private:
   double m_txCurrentA; ///< transmit current
   double m_rxCurrentA; ///< receive current
   double m_idleCurrentA; ///< idle current
+  double m_standbyCurrentA; ///< standby current
   double m_sleepCurrentA; ///< sleep current
   double m_turnOnCurrentA; // current when turning on
   double m_referenceVoltage; // used with the current to determine the load

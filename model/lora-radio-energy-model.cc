@@ -55,8 +55,8 @@ LoraRadioEnergyModel::GetTypeId (void)
                          MakeDoubleChecker<double> ())
           .AddAttribute ("IdleCurrentA", "The default radio Idle current in Ampere.",
                          DoubleValue (0.000007), // idle mode = 7 uA
-                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetStandbyCurrentA,
-                                             &LoraRadioEnergyModel::GetStandbyCurrentA),
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetIdleCurrentA,
+                                             &LoraRadioEnergyModel::GetIdleCurrentA),
                          MakeDoubleChecker<double> ())
           .AddAttribute ("TxCurrentA", "The radio Tx current in Ampere.",
                          DoubleValue (0.028), // transmit at 0dBm = 28mA
@@ -159,14 +159,14 @@ double
 LoraRadioEnergyModel::GetStandbyCurrentA (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_idleCurrentA;
+  return m_standbyCurrentA;
 }
 
 void
-LoraRadioEnergyModel::SetStandbyCurrentA (double idleCurrentA)
+LoraRadioEnergyModel::SetStandbyCurrentA (double standbyCurrentA)
 {
-  NS_LOG_FUNCTION (this << idleCurrentA);
-  m_idleCurrentA = idleCurrentA;
+  NS_LOG_FUNCTION (this << standbyCurrentA);
+  m_standbyCurrentA = standbyCurrentA;
 }
 
 double
@@ -260,7 +260,7 @@ LoraRadioEnergyModel::GetCurrent (EndDeviceLoraPhy::State status)
   switch (status)
     {
     case EndDeviceLoraPhy::STANDBY:
-      current =  m_idleCurrentA;
+      current =  m_standbyCurrentA;
       break;
     case EndDeviceLoraPhy::TX:
       current =  m_txCurrentA;
@@ -518,7 +518,7 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
   switch (m_currentState)
     {
     case EndDeviceLoraPhy::STANDBY:
-      return m_idleCurrentA;
+      return m_standbyCurrentA;
     case EndDeviceLoraPhy::TX:
       return m_txCurrentA;
     case EndDeviceLoraPhy::RX:
