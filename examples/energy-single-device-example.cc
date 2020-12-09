@@ -35,6 +35,7 @@
 #include "ns3/lora-radio-energy-model-helper.h"
 #include "ns3/network-server-helper.h"
 #include "ns3/forwarder-helper.h"
+#include "ns3/lora-packet-tracker.h"
 #include "ns3/file-helper.h"
 #include "ns3/names.h"
 #include "ns3/config.h"
@@ -56,12 +57,17 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
 // Inputs
-double capacity = 0.006;
 double simTime = 100;
 double appPeriod = 10;
+double capacity = 6; // mF
+int packetSize = 10;
+double eh = 0.001;
+uint8_t dr = 5;
+bool confirmed = false;
 bool enableVariableHarvester = false;
 bool sun = true;
 bool energyAwareSender = false;
+std::string filenameRemainingVoltage = "remainingVoltage.txt";
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
 std::string filenameState = "deviceStates.txt";
@@ -69,6 +75,7 @@ std::string filenameEnoughEnergy = "energyEnoughForTx.txt";
 std::string pathToInputFile = "/home/marty/work/ua/panels_data";
 std::string filenameHarvesterSun = "/outputixys.csv";
 std::string filenameHarvesterCloudy = "/outputixys_cloudy.csv";
+bool remainingVoltageCallbackFirstCall = true;
 bool energyConsumptionCallbackFirstCall = true;
 bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
@@ -112,9 +119,25 @@ OnDeviceEnergyConsumption (double oldvalue, double energyConsumption)
 void
 OnRemainingVoltageChange (double oldRemainingVoltage, double remainingVoltage)
 {
-  // NS_LOG_DEBUG (Simulator::Now().GetSeconds() << " " << remainingVoltage);
-  std::cout << Simulator::Now ().GetMilliSeconds () << " " << remainingVoltage << std::endl;
-  // return std::to_string(Simulator::Now().GetSeconds()) + " " + std::to_string(remainingVoltage)
+
+  const char *c = filenameRemainingVoltage.c_str ();
+  std::ofstream outputFile;
+  if (remainingVoltageCallbackFirstCall)
+    {
+      // Delete contents of the file as it is opened
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+      outputFile << Simulator::Now ().GetMilliSeconds () << " " << remainingVoltage << std::endl;
+      remainingVoltageCallbackFirstCall = false;
+    }
+  else
+    {
+      // Only append to the file
+      outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
+
+  outputFile << Simulator::Now ().GetMilliSeconds () << " " << remainingVoltage << std::endl;
+
+  outputFile.close ();
 }
 
 void OnEnergyHarvested (double oldvalue, double totalEnergyHarvested)
@@ -195,35 +218,40 @@ int main (int argc, char *argv[])
   cmd.AddValue ("pathToInputFile",
                 "Absolute path till the input file for the varaible energy harvester",
                 pathToInputFile);
-  cmd.AddValue ("capacity", "Capacity", capacity);
+  cmd.AddValue ("capacity", "Capacity [mF]", capacity);
   cmd.AddValue ("simTime", "Simulation time [s]", simTime);
   cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
+  cmd.AddValue ("confirmed", "Send confirmed message", confirmed);
+  cmd.AddValue ("dr", "dr", dr);
+  cmd.AddValue ("packetSize", "PacketSize", packetSize);
   cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
                  enableVariableHarvester);
   cmd.AddValue ("sun", "Input from sunny day", sun);
+  cmd.AddValue ("eh", "eh", eh);
   cmd.AddValue ("energyAwareSender", "Send packet when energy allows it", energyAwareSender);
   cmd.Parse (argc, argv);
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
+  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
-  LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
-  LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannel", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraHelper", LOG_LEVEL_ALL);
@@ -238,6 +266,8 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
+  // Set SF
+  Config::SetDefault ("ns3::EndDeviceLorawanMac::DataRate", UintegerValue (dr));
 
   // Select input file
   std::string filenameHarvester;
@@ -286,6 +316,7 @@ int main (int argc, char *argv[])
 
   // Create the LoraHelper
   LoraHelper helper = LoraHelper ();
+  helper.EnablePacketTracking ();
 
   /************************
   *  Create End Devices  *
@@ -305,6 +336,15 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LorawanMacHelper::ED_A);
   NetDeviceContainer endDevicesNetDevices = helper.Install (phyHelper, macHelper, endDevices);
 
+  // Set message type (Default is unconfirmed)
+  if (confirmed)
+    {
+      Ptr<LorawanMac> edMac1 =
+        endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ()->GetMac ();
+      Ptr<ClassAEndDeviceLorawanMac> edLorawanMac1 = edMac1->GetObject<ClassAEndDeviceLorawanMac> ();
+      edLorawanMac1->SetMType (LorawanMacHeader::CONFIRMED_DATA_UP);
+    }
+
   /*********************
    *  Create Gateways  *
    *********************/
@@ -321,13 +361,8 @@ int main (int argc, char *argv[])
   macHelper.SetDeviceType (LorawanMacHelper::GW);
   helper.Install (phyHelper, macHelper, gateways);
 
-  macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
+  // macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
 
-  // Set message type (Default is unconfirmed)
-  Ptr<LorawanMac> edMac1 =
-      endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ()->GetMac ();
-  Ptr<ClassAEndDeviceLorawanMac> edLorawanMac1 = edMac1->GetObject<ClassAEndDeviceLorawanMac> ();
-  edLorawanMac1->SetMType (LorawanMacHeader::CONFIRMED_DATA_UP);
 
   /*********************************************
    *  Install applications on the end devices  *
@@ -337,7 +372,7 @@ int main (int argc, char *argv[])
     {
       EnergyAwareSenderHelper energyAwareSenderHelper;
       double voltageTh = 0.2;
-      double energyTh = capacity * pow (voltageTh, 2) / 2;
+      double energyTh = capacity/1000 * pow (voltageTh, 2) / 2;
       energyAwareSenderHelper.SetEnergyThreshold (energyTh); // (0.29);
       energyAwareSenderHelper.SetMinInterval (Seconds (appPeriod));
       energyAwareSenderHelper.SetPacketSize (19);
@@ -347,7 +382,7 @@ int main (int argc, char *argv[])
     {
       PeriodicSenderHelper periodicSenderHelper;
       periodicSenderHelper.SetPeriod (Seconds (appPeriod));
-      periodicSenderHelper.SetPacketSize (16);
+      periodicSenderHelper.SetPacketSize (packetSize);
       periodicSenderHelper.Install (endDevices);
     }
 
@@ -357,17 +392,34 @@ int main (int argc, char *argv[])
 
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("Capacity", DoubleValue (capacity));
-  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.2));
+  capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000));
+  capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
-  capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (1));
-  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (1));
+  capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
+  // Assumption that the C does not reach full capacity because of some
+  // consumption in the OFF state
+  double E = 3.3; // V
+  double Ioff = 0.0000055;
+  double RLoff = E/Ioff;
+  double ri = pow(E, 2)/eh;
+  double Req_off = RLoff;
+  double V0 = E;
+  if (eh != 0)
+  {
+    Req_off = RLoff * ri / (RLoff + ri);
+    V0 = E * Req_off / ri;
+    }
+  NS_LOG_DEBUG ("Initial voltage [V]= " << V0 <<
+                " RLoff " << RLoff <<
+                " ri " << ri <<
+                " R_eq_off " << Req_off);
+  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
   capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(true));
-  radioEnergy.Set ("TurnOnDuration",
-                   TimeValue (Seconds (0.2)));
+  // radioEnergy.Set ("TurnOnDuration",
+  //                  TimeValue (Seconds (0.2)));
   // Values from datasheet
   radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
@@ -376,9 +428,9 @@ int main (int argc, char *argv[])
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0000014));
 
   //  // Basic Energy harvesting
-  // BasicEnergyHarvesterHelper harvesterHelper;
-  // harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
-  //                      TimeValue (MilliSeconds(500)));
+  BasicEnergyHarvesterHelper harvesterHelper;
+  harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
+                       TimeValue (Seconds(10)));
   // // Visconti, Paolo, et al."An overview on state-of-art energy harvesting
   // //     techniques and choice criteria: a wsn node for goods transport and
   // //     storage powered by a smart solar-based eh system." Int.J .Renew.Energy Res
@@ -386,8 +438,10 @@ int main (int argc, char *argv[])
   // // Let's assume we are OUTDOOR, and the surface we are provided is 2 cm2
   // double minPowerDensity = 0.000001; // 30e-3;
   // double maxPowerDensity = 0.00001; // 0.30e-3;
-  // std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
-  // harvesterHelper.Set ("HarvestablePower", StringValue (power));
+  double minPowerDensity = eh; // 30e-3;
+  double maxPowerDensity = eh; // 0.30e-3;
+  std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string(minPowerDensity) + "|Max=" + std::to_string(maxPowerDensity) + "]";
+  harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
   // // Variable energy harvesting
   VariableEnergyHarvesterHelper variableEhHelper;
@@ -402,11 +456,15 @@ int main (int argc, char *argv[])
 
   Names::Add ("/Names/EnergySource", sources.Get(0));
 
-  // EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
   if (enableVariableHarvester)
   {
     EnergyHarvesterContainer harvesters = variableEhHelper.Install (sources);
   }
+  else
+    {
+      EnergyHarvesterContainer harvesters = harvesterHelper.Install (sources);
+    }
+
 
   // Names::Add("Names/EnergyHarvester", harvesters.Get (0));
   // Ptr<EnergyHarvester> myHarvester = harvesters.Get(0);
@@ -451,6 +509,12 @@ int main (int argc, char *argv[])
   ForwarderHelper forwarderHelper;
   forwarderHelper.Install (gateways);
 
+  ///////////////////
+  // Packet tracker
+  ///////////////////
+  LoraPacketTracker& tracker = helper.GetPacketTracker();
+
+
   /****************
   *  Simulation  *
   ****************/
@@ -459,6 +523,16 @@ int main (int argc, char *argv[])
 
   Simulator::Run ();
 
+  // Outputs
+  std::string pdr = tracker.CountMacPacketsGlobally (Seconds(0), Seconds(simTime));
+  std::string cpsr = "0 0";
+  if (confirmed)
+  {
+    cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
+  }
+  std::cout << pdr << " " << cpsr << std::endl;
+
+  // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);
   // Fix output files if not created
   if (stateChangeCallbackFirstCall)
@@ -500,6 +574,7 @@ int main (int argc, char *argv[])
       outputFile.close ();
     }
 
+  // Destroy simulator
   Simulator::Destroy ();
 
   return 0;

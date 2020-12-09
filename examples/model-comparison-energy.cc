@@ -80,9 +80,9 @@ bool receivedDLCallbackFirstCall = true;
 bool receivedULCallbackFirstCall = true;
 bool ULCycleCompleted = false;
 
-    // Callbcks
-    void
-    OnCloseRX2Callback (void)
+// Callbcks
+void
+OnCloseRX2Callback (void)
 {
   // NS_LOG_DEBUG ("Called an empty callback");
   std::cout << "0 1" << std::endl;
