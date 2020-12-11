@@ -27,8 +27,11 @@
 #include "ns3/assert.h"
 #include "ns3/double.h"
 #include "ns3/packet.h"
+#include "ns3/string.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/simulator.h"
+#include "src/core/model/string.h"
+#include <fstream>
 #include <math.h>
 #include <string>
 
@@ -84,6 +87,11 @@ CapacitorEnergySource::GetTypeId (void)
                          MakeTimeAccessor (&CapacitorEnergySource::SetUpdateInterval,
                                            &CapacitorEnergySource::GetUpdateInterval),
                          MakeTimeChecker ())
+          .AddAttribute ("FilenameVoltageTracking",
+                         "Name of the output file where to save voltage values",
+                         StringValue (),
+                         MakeStringAccessor (&CapacitorEnergySource::m_filenameVoltageTracking),
+                         MakeStringChecker ())
           .AddTraceSource ("RemainingEnergy", "Remaining energy at CapacitorEnergySource.",
                            MakeTraceSourceAccessor (&CapacitorEnergySource::m_remainingEnergyJ),
                            "ns3::TracedValueCallback::Double")
@@ -261,6 +269,10 @@ CapacitorEnergySource::UpdateEnergySource (void)
                                                   &CapacitorEnergySource::UpdateEnergySource,
                                                  this);
     }
+
+    // Track the value (also if it did not change)
+    TrackVoltage();
+
     // Update remaining energy
     m_remainingEnergyJ = m_capacity * pow (m_actualVoltageV, 2) / 2;
     NS_LOG_DEBUG("[DEBUG] Update remaining energy= " << m_remainingEnergyJ);
@@ -272,7 +284,6 @@ CapacitorEnergySource::GetActualVoltage (void)
   NS_LOG_FUNCTION (this);
   return m_actualVoltageV;
 }
-
 
 /*
  * Private functions start here.
@@ -307,23 +318,6 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
   NS_LOG_DEBUG ("CapacitorEnergySource:Energy recharged!");
   NotifyEnergyRecharged (); // notify DeviceEnergyModel objects
 }
-
-
-
-// void
-// CapacitorEnergySource::CalculateRemainingEnergy (void)
-// {
-//   NS_LOG_FUNCTION (this);
-//   NS_LOG_DEBUG("Old energy value to be updated [J]: " << m_remainingEnergyJ);
-//   UpdateVoltage();
-//   // energy = current * voltage * time
-//   double energyToDecreaseJ = (totalCurrentA * m_actualVoltageV * duration.GetNanoSeconds ()) / 1e9;
-//   NS_ASSERT_MSG (m_remainingEnergyJ >= energyToDecreaseJ,
-//                  "Remaining energy < energy to decrease "
-//                  +std::to_string(energyToDecreaseJ));
-//   m_remainingEnergyJ -= energyToDecreaseJ;
-//   NS_LOG_DEBUG ("CapacitorEnergySource:Remaining energy = " << m_remainingEnergyJ);
-// }
 
   double
   CapacitorEnergySource::ComputeVoltage (double Iload, Time duration)
@@ -387,8 +381,8 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
     m_lastUpdateTime = Simulator::Now();
 
     NS_LOG_INFO ("Duration: " << duration.GetSeconds() <<
-                  " s, new Voltage: " << voltage << " V");
-  }
+                  " s, new Voltage: " << m_actualVoltageV << " V");
+    }
 
 double
 CapacitorEnergySource::PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
@@ -445,5 +439,24 @@ CapacitorEnergySource::GetHarvestersPower (void)
   return totalHarvestedPower;
 }
 
+void
+CapacitorEnergySource::TrackVoltage (void)
+{
+  NS_LOG_FUNCTION (this);
+  const char *c = m_filenameVoltageTracking.c_str ();
+  std::ofstream outputFile;
+  if (Simulator::Now () == Seconds (0))
+    {
+      // Delete contents of the file as it is opened and put initial V
+      outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
+    }
+  else
+    {
+      // Append to file
+      outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
+  outputFile << Simulator::Now ().GetMilliSeconds () << " " << GetActualVoltage () << std::endl;
+  outputFile.close ();
+}
 
 } // namespace ns3

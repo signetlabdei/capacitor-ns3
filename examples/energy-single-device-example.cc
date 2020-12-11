@@ -122,13 +122,13 @@ void
 OnRemainingVoltageChange (double oldRemainingVoltage, double remainingVoltage)
 {
 
+  NS_LOG_DEBUG("Callback");
   const char *c = filenameRemainingVoltage.c_str ();
   std::ofstream outputFile;
   if (remainingVoltageCallbackFirstCall)
     {
       // Delete contents of the file as it is opened
       outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
-      outputFile << Simulator::Now ().GetMilliSeconds () << " " << remainingVoltage << std::endl;
       remainingVoltageCallbackFirstCall = false;
     }
   else
@@ -428,6 +428,8 @@ int main (int argc, char *argv[])
                 " R_eq_off " << Req_off);
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
   capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
+  capacitorHelper.Set ("FilenameVoltageTracking",
+                      StringValue(filenameRemainingVoltage));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(true));
@@ -442,7 +444,7 @@ int main (int argc, char *argv[])
   // // Values for MCU + Radio (MCU=11uA for active, 5.5uA idle)
   radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011)); 
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.0110055));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
   // and we should also have Ioff
@@ -507,8 +509,8 @@ int main (int argc, char *argv[])
                                         MakeCallback (&OnEndDeviceStateChange));
   ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingEnergy",
                                           MakeCallback (&OnRemainingEnergyChange));
-  ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
-                                      MakeCallback (&OnRemainingVoltageChange));
+  // ns3::Config::ConnectWithoutContext ("/Names/EnergySource/RemainingVoltage",
+  //                                     MakeCallback (&OnRemainingVoltageChange));
   deviceModels.Get(0)->TraceConnectWithoutContext("TotalEnergyConsumption",
                                            MakeCallback(&OnDeviceEnergyConsumption));
 

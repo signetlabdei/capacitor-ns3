@@ -132,6 +132,9 @@ public:
   double PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
                                       Time duration);
 
+  void EnableVoltageTracking (std::string filename);
+
+
 private:
   /// Defined in ns3::Object
   void DoInitialize (void);
@@ -180,6 +183,12 @@ private:
    */
   double GetHarvestersPower (void);
 
+  /**
+   * Write on the output file the actual voltage state.
+   * It is called by UpdateSource.
+   */
+  void TrackVoltage (void);
+
 private:
   double m_initialVoltageV; // initial voltage, in Volt
   double m_supplyVoltageV; // supply voltage, in Volts
@@ -193,6 +202,8 @@ private:
   EventId m_voltageUpdateEvent; // voltage update event
   Time m_lastUpdateTime; // last update time
   Time m_updateInterval; // voltage update interval
+
+  std::string m_filenameVoltageTracking; // name of the output file w/ voltage values
 };
 
 } // namespace ns3
