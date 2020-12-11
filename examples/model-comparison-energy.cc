@@ -63,6 +63,7 @@ double capacity = 6;
 double simTime = 5;
 double appPeriod = 10;
 int packetSize = 10;
+int replySize = 0;
 double eh = 0.001;
 uint8_t dr = 5;
 bool confirmed = false;
@@ -128,6 +129,7 @@ int main (int argc, char *argv[])
   //               pathToInputFile);
   cmd.AddValue ("capacity", "Capacity in mF", capacity);
   cmd.AddValue ("packetSize", "PacketSize", packetSize);
+  cmd.AddValue ("replySize", "ReplySize", replySize);
   cmd.AddValue ("dr", "dr", dr);
   cmd.AddValue ("confirmed", "confirmed", confirmed);
   cmd.AddValue ("eh", "eh", eh);
@@ -389,7 +391,7 @@ int main (int argc, char *argv[])
 
   // Install the NetworkServer application on the network server
   NetworkServerHelper networkServerHelper;
-  networkServerHelper.SetAttribute ("ReplyPayloadSize", IntegerValue(10));
+  networkServerHelper.SetAttribute ("ReplyPayloadSize", IntegerValue(replySize));
   networkServerHelper.SetGateways (gateways);
   networkServerHelper.SetEndDevices (endDevices);
   networkServerHelper.Install (networkServers);

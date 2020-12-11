@@ -95,24 +95,24 @@ ClassAEndDeviceLorawanMac::SendToPhy (Ptr<Packet> packetToSend)
     }
 
   // // Craft LoraTxParameters object
-  LoraTxParameters params;
-  params.sf = GetSfFromDataRate (m_dataRate);
-  params.headerDisabled = m_headerDisabled;
-  params.codingRate = m_codingRate;
-  params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
-  params.nPreamble = m_nPreambleSymbols;
-  params.crcEnabled = 1;
-  params.lowDataRateOptimizationEnabled = 0;
-
-  // FOR MODEL COMPARISON Modify to compare with the model
   // LoraTxParameters params;
   // params.sf = GetSfFromDataRate (m_dataRate);
-  // params.headerDisabled = 1;
-  // params.codingRate = 1;
+  // params.headerDisabled = m_headerDisabled;
+  // params.codingRate = m_codingRate;
   // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
-  // params.nPreamble = 8;
+  // params.nPreamble = m_nPreambleSymbols;
   // params.crcEnabled = 1;
   // params.lowDataRateOptimizationEnabled = 0;
+
+  // FOR MODEL COMPARISON Modify to compare with the model
+  LoraTxParameters params;
+  params.sf = GetSfFromDataRate (m_dataRate);
+  params.headerDisabled = 1;
+  params.codingRate = 1;
+  params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+  params.nPreamble = 8;
+  params.crcEnabled = 1;
+  params.lowDataRateOptimizationEnabled = 0;
 
   // Wake up PHY layer and directly send the packet
 
