@@ -14,10 +14,12 @@
 #include "ns3/gateway-lora-phy.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
 #include "ns3/gateway-lorawan-mac.h"
+#include "ns3/integer.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/lora-radio-energy-model.h"
 #include "ns3/nstime.h"
 #include "ns3/object.h"
+#include "ns3/one-shot-sender-helper.h"
 #include "ns3/packet.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
@@ -380,10 +382,21 @@ int main (int argc, char *argv[])
     }
   else
     {
-      PeriodicSenderHelper periodicSenderHelper;
-      periodicSenderHelper.SetPeriod (Seconds (appPeriod));
-      periodicSenderHelper.SetPacketSize (packetSize);
-      periodicSenderHelper.Install (endDevices);
+      // PeriodicSenderHelper periodicSenderHelper;
+      // periodicSenderHelper.SetPeriod (Seconds (appPeriod));
+      // periodicSenderHelper.SetPacketSize (packetSize);
+      // periodicSenderHelper.Install (endDevices);
+
+      OneShotSenderHelper oneshotsenderHelper;
+      double sendTime = appPeriod;
+      while (sendTime < simTime)
+      {
+        oneshotsenderHelper.SetSendTime (Seconds (sendTime));
+        oneshotsenderHelper.Install(endDevices);
+        oneshotsenderHelper.SetAttribute ("PacketSize", IntegerValue(packetSize));
+        sendTime = sendTime + appPeriod;
+      }
+
     }
 
   /************************
@@ -421,11 +434,18 @@ int main (int argc, char *argv[])
   // radioEnergy.Set ("TurnOnDuration",
   //                  TimeValue (Seconds (0.2)));
   // Values from datasheet
-  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
-  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011));
-  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000001));
-  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0000014));
+  // radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
+  // radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
+  // radioEnergy.Set ("RxCurrentA", DoubleValue (0.011));
+  // radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000001));
+  // radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0000014));
+  // // Values for MCU + Radio (MCU=11uA for active, 5.5uA idle)
+  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011)); 
+  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
+  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
+  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
+  // and we should also have Ioff
 
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
