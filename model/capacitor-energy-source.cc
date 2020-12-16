@@ -342,10 +342,9 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
           }
         else
           {
-            // TODO What to do in this case?
-            NS_ABORT_MSG("Weird case: no harvested power and no device consumption (OFF)");
+            NS_LOG_ERROR("No harvested power and no device consumption: the device is in OFF state and will never exit!");
             // Assuming no consumption ?
-            return m_actualVoltageV;
+            return 0;
           }
       }
     else
