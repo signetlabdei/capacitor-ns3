@@ -96,11 +96,13 @@ private:
   void CalculateHarvestedPower (void);
 
   /**
-   * Read the input file and get the corresponding power 
+   * Read the input file and save the corresponding power in an internal vector
    */
   void ReadPowerFromFile ();
 
-  // TODO add description
+  /**
+   * Read the power corresponding to the input time value
+   */
   double GetPowerFromFile (Time time);
 
   /**

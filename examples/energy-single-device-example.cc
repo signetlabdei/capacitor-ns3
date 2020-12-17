@@ -66,8 +66,6 @@ int packetSize = 10;
 double eh = 0.001;
 uint8_t dr = 5;
 bool confirmed = false;
-bool enableVariableHarvester = false;
-bool sun = true;
 bool energyAwareSender = false;
 std::string filenameRemainingVoltage = "remainingVoltage.txt";
 std::string filenameEnergyConsumption = "energyConsumption.txt";
@@ -226,9 +224,9 @@ int main (int argc, char *argv[])
   cmd.AddValue ("confirmed", "Send confirmed message", confirmed);
   cmd.AddValue ("dr", "dr", dr);
   cmd.AddValue ("packetSize", "PacketSize", packetSize);
-  cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
-                 enableVariableHarvester);
-  cmd.AddValue ("sun", "Input from sunny day", sun);
+  // cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
+  //                enableVariableHarvester);
+  // cmd.AddValue ("sun", "Input from sunny day", sun);
   cmd.AddValue ("eh", "eh", eh);
   cmd.AddValue ("energyAwareSender", "Send packet when energy allows it", energyAwareSender);
   cmd.Parse (argc, argv);
@@ -271,16 +269,24 @@ int main (int argc, char *argv[])
   // Set SF
   Config::SetDefault ("ns3::EndDeviceLorawanMac::DataRate", UintegerValue (dr));
 
-  // Select input file
+  // Select harvester and input file
+  bool enableVariableHarvester; 
   std::string filenameHarvester;
-  if (sun)
+  if (eh == -1) // sunny
     {
+      enableVariableHarvester = true;
       filenameHarvester = pathToInputFile + filenameHarvesterSun;
     }
-  else
+  else if (eh == -2) // cloudy
     {
+      enableVariableHarvester = true;
       filenameHarvester = pathToInputFile + filenameHarvesterCloudy;
     }
+  else // uniform harvester
+    {
+      enableVariableHarvester = false;
+    }
+
   /************************
   *  Create the channel  *
   ************************/
@@ -407,7 +413,7 @@ int main (int argc, char *argv[])
   CapacitorEnergySourceHelper capacitorHelper;
   capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000));
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
-  capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
+  capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.85)); // 2.805 V
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
   // Assumption that the C does not reach full capacity because of some
   // consumption in the OFF state
@@ -432,9 +438,10 @@ int main (int argc, char *argv[])
                       StringValue(filenameRemainingVoltage));
 
   LoraRadioEnergyModelHelper radioEnergy;
-  radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(true));
-  // radioEnergy.Set ("TurnOnDuration",
-  //                  TimeValue (Seconds (0.2)));
+  radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
+  radioEnergy.Set ("TurnOnDuration",
+                   TimeValue (Seconds (0.2)));
+  radioEnergy.Set ("TurnOnCurrentA", DoubleValue(0.015));
   // Values from datasheet
   // radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
   // radioEnergy.Set ("IdleCurrentA", DoubleValue (0.0000015));
@@ -444,7 +451,7 @@ int main (int argc, char *argv[])
   // // Values for MCU + Radio (MCU=11uA for active, 5.5uA idle)
   radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011)); 
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.0110055));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
   // and we should also have Ioff

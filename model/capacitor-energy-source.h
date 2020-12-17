@@ -129,10 +129,8 @@ public:
   /**
    * Predict voltage variation for a given state and duration
    */
-  double PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
+  double PredictVoltageForLorawanState (lorawan::EndDeviceLoraPhy::State status,
                                       Time duration);
-
-  void EnableVoltageTracking (std::string filename);
 
 
 private:
@@ -157,21 +155,10 @@ private:
    */
   void HandleEnergyRechargedEvent (void);
 
-  // /**
-  //  * Calculates remaining energy. This function uses the total current from all
-  //  * device models to calculate the amount of energy to decrease. The energy to
-  //  * decrease is given by:
-  //  *    energy to decrease = total current * supply voltage * time duration
-  //  * This function subtracts the calculated energy to decrease from remaining
-  //  * energy.
-  //  */
-  // void CalculateRemainingEnergy (void);
-
   /**
    * Compute the voltage at this time.
    */
   void UpdateVoltage (void);
-
 
   /**
    * Compute the current consumed by the devices in this moment

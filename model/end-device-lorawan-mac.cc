@@ -277,7 +277,7 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
           if (!(capacitor == 0))
             {
               double predictedVoltage =
-                  capacitor->PredictVoltageForLoraState (EndDeviceLoraPhy::TX, duration);
+                  capacitor->PredictVoltageForLorawanState (EndDeviceLoraPhy::TX, duration);
               double actualVoltage = capacitor->GetActualVoltage ();
               double maxVoltage = capacitor->GetSupplyVoltage ();
               DoubleValue lowThreshold;

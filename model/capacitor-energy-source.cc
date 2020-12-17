@@ -59,11 +59,6 @@ CapacitorEnergySource::GetTypeId (void)
                          MakeDoubleAccessor (&CapacitorEnergySource::SetInitialVoltage,
                                              &CapacitorEnergySource::GetInitialVoltage),
                          MakeDoubleChecker<double> ())
-          // .AddAttribute ("CapacitorEnergySourceInitialEnergyJ",
-          //                "Initial energy of the capacitor energy source.",
-          //                DoubleValue (0), // in Volt
-          //                MakeDoubleAccessor (&CapacitorEnergySource::SetInitialEnergy),
-          //                MakeDoubleChecker<double> ())
           .AddAttribute ("CapacitorMaxSupplyVoltageV",
                          "Max Supply voltage for capacitor energy source.",
                          DoubleValue (3.3), // in Volts
@@ -384,7 +379,7 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
     }
 
 double
-CapacitorEnergySource::PredictVoltageForLoraState (lorawan::EndDeviceLoraPhy::State status,
+CapacitorEnergySource::PredictVoltageForLorawanState (lorawan::EndDeviceLoraPhy::State status,
                                                 Time duration)
 {
   NS_LOG_FUNCTION (this);
@@ -454,7 +449,8 @@ CapacitorEnergySource::TrackVoltage (void)
       // Append to file
       outputFile.open (c, std::ofstream::out | std::ofstream::app);
     }
-  outputFile << Simulator::Now ().GetMilliSeconds () << " " << GetActualVoltage () << std::endl;
+  outputFile << Simulator::Now ().GetMilliSeconds () <<
+    " " << GetActualVoltage () << std::endl;
   outputFile.close ();
 }
 

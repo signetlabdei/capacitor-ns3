@@ -333,7 +333,7 @@ int main (int argc, char *argv[])
   radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds(0.2)));
   // Values from Carmen
   radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011211));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));

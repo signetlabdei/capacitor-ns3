@@ -597,7 +597,7 @@ LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State stat
   if (!(capacitor == 0))
     {
       voltage =
-          capacitor->PredictVoltageForLoraState (status, duration);
+          capacitor->PredictVoltageForLorawanState (status, duration);
       NS_LOG_DEBUG("New voltage [V] = " << voltage );
     }
   else
