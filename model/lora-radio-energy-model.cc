@@ -73,6 +73,11 @@ LoraRadioEnergyModel::GetTypeId (void)
                          MakeDoubleAccessor (&LoraRadioEnergyModel::SetSleepCurrentA,
                                              &LoraRadioEnergyModel::GetSleepCurrentA),
                          MakeDoubleChecker<double> ())
+          .AddAttribute ("OffCurrentA", "The radio Off current in Ampere.",
+                         DoubleValue (0.0000055), // off mode = 5.5 mA
+                         MakeDoubleAccessor (&LoraRadioEnergyModel::SetOffCurrentA,
+                                             &LoraRadioEnergyModel::GetOffCurrentA),
+                         MakeDoubleChecker<double> ())
           .AddAttribute ("TurnOnCurrentA", "The radio TurnOn current in Ampere.",
                          DoubleValue (0.0221), // turnOn mode = 22.1 mA
                          MakeDoubleAccessor (&LoraRadioEnergyModel::SetTurnOnCurrentA,
@@ -101,10 +106,7 @@ LoraRadioEnergyModel::GetTypeId (void)
           .AddTraceSource (
               "TotalEnergyConsumption", "Total energy consumption of the radio device.",
               MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
-              "ns3::TracedValueCallback::Double")
-      // qui potrei aggiungere le callback (e.g., m_changeStateCallback) come
-      // tracesource
-      ;
+              "ns3::TracedValueCallback::Double");
   return tid;
 }
 
@@ -237,6 +239,20 @@ LoraRadioEnergyModel::SetTurnOnCurrentA (double turnOnCurrentA)
 {
   NS_LOG_FUNCTION (this << turnOnCurrentA);
   m_turnOnCurrentA = turnOnCurrentA;
+}
+
+double
+LoraRadioEnergyModel::GetOffCurrentA (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_offCurrentA;
+}
+
+void
+LoraRadioEnergyModel::SetOffCurrentA (double offCurrentA)
+{
+  NS_LOG_FUNCTION (this << offCurrentA);
+  m_offCurrentA = offCurrentA;
 }
 
     EndDeviceLoraPhy::State
@@ -528,7 +544,7 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
     case EndDeviceLoraPhy::IDLE:
       return m_idleCurrentA;
     case EndDeviceLoraPhy::OFF:
-      return 0;
+      return m_offCurrentA;
     case EndDeviceLoraPhy::TURNON:
       return m_turnOnCurrentA;
     default:

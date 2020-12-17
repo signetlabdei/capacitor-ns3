@@ -207,6 +207,9 @@ public:
   double GetTurnOnCurrentA (void) const;
   void SetTurnOnCurrentA (double turnOnCurrentA);
 
+  double GetOffCurrentA (void) const;
+  void SetOffCurrentA (double offCurrentA);
+
   /**
    * Compute the load for a status using the reference voltage
    */
@@ -311,6 +314,7 @@ private:
   Ptr<EnergySource> m_source; ///< energy source
 
   // Member variables for current draw in different radio modes.
+  double m_offCurrentA; ///< current due to the MCU when in Off
   double m_txCurrentA; ///< transmit current
   double m_rxCurrentA; ///< receive current
   double m_idleCurrentA; ///< idle current
