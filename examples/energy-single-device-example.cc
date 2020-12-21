@@ -183,9 +183,6 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
 void
 OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::State status)
 {
-  // NS_LOG_DEBUG ("OnEndDeviceStateChange " << status);
-  // std::cout << Simulator::Now().GetSeconds() << " " << status << std::endl;
-
   const char *c = filenameState.c_str ();
   std::ofstream outputFile;
   if (stateChangeCallbackFirstCall)
@@ -197,10 +194,11 @@ OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::Sta
       NS_LOG_DEBUG ("Append initial state inside the callback");
       stateChangeCallbackFirstCall = false;
     }
-  {
-    // Only append to the file
-    outputFile.open (c, std::ofstream::out | std::ofstream::app);
-  }
+  else
+    {
+      // Only append to the file
+      outputFile.open (c, std::ofstream::out | std::ofstream::app);
+    }
 
   outputFile << Simulator::Now ().GetSeconds () << " " << status << std::endl;
 
@@ -234,7 +232,7 @@ int main (int argc, char *argv[])
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
@@ -243,13 +241,13 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("LogicalLoraChannelHelper", LOG_LEVEL_ALL);
@@ -454,7 +452,7 @@ int main (int argc, char *argv[])
   radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
-  // and we should also have Ioff
+  radioEnergy.Set ("OffCurrentA", DoubleValue (0.0000055));
 
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;

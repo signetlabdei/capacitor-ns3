@@ -202,6 +202,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
 
   if (IsEnergyStateOk ())
       {
+        NS_LOG_DEBUG("actually switched to tx!");
         m_state = TX;
 
         // Notify listeners of the state change
