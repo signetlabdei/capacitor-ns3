@@ -66,7 +66,7 @@ int packetSize = 10;
 double eh = 0.001;
 uint8_t dr = 5;
 bool confirmed = false;
-bool energyAwareSender = false;
+std::string sender = "periodicSender";
 std::string filenameRemainingVoltage = "remainingVoltage.txt";
 std::string filenameEnergyConsumption = "energyConsumption.txt";
 std::string filenameRemainingEnergy = "remainingEnergy.txt";
@@ -226,13 +226,13 @@ int main (int argc, char *argv[])
   //                enableVariableHarvester);
   // cmd.AddValue ("sun", "Input from sunny day", sun);
   cmd.AddValue ("eh", "eh", eh);
-  cmd.AddValue ("energyAwareSender", "Send packet when energy allows it", energyAwareSender);
+  cmd.AddValue ("sender", "Application sender [energyAwareSender, periodicSender, multipleShots]", sender);
   cmd.Parse (argc, argv);
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
   // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
   // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
@@ -374,7 +374,7 @@ int main (int argc, char *argv[])
    *  Install applications on the end devices  *
    *********************************************/
 
-  if (energyAwareSender)
+  if (sender == "energyAwareSender")
     {
       EnergyAwareSenderHelper energyAwareSenderHelper;
       double voltageTh = 0.2;
@@ -384,13 +384,8 @@ int main (int argc, char *argv[])
       energyAwareSenderHelper.SetPacketSize (19);
       energyAwareSenderHelper.Install (endDevices);
     }
-  else
+  else if (sender == "multipleShots")
     {
-      // PeriodicSenderHelper periodicSenderHelper;
-      // periodicSenderHelper.SetPeriod (Seconds (appPeriod));
-      // periodicSenderHelper.SetPacketSize (packetSize);
-      // periodicSenderHelper.Install (endDevices);
-
       OneShotSenderHelper oneshotsenderHelper;
       double sendTime = appPeriod;
       while (sendTime < simTime)
@@ -400,7 +395,13 @@ int main (int argc, char *argv[])
         oneshotsenderHelper.SetAttribute ("PacketSize", IntegerValue(packetSize));
         sendTime = sendTime + appPeriod;
       }
-
+    }
+  else if (sender == "periodicSender")
+    {
+      PeriodicSenderHelper periodicSenderHelper;
+      periodicSenderHelper.SetPeriod (Seconds (appPeriod));
+      periodicSenderHelper.SetPacketSize (packetSize);
+      periodicSenderHelper.Install (endDevices);
     }
 
   /************************
@@ -411,7 +412,7 @@ int main (int argc, char *argv[])
   CapacitorEnergySourceHelper capacitorHelper;
   capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000));
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
-  capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.85)); // 2.805 V
+  capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.9090)); // 3 V
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
   // Assumption that the C does not reach full capacity because of some
   // consumption in the OFF state
@@ -438,7 +439,7 @@ int main (int argc, char *argv[])
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
   radioEnergy.Set ("TurnOnDuration",
-                   TimeValue (Seconds (0.2)));
+                   TimeValue (Seconds (13)));
   radioEnergy.Set ("TurnOnCurrentA", DoubleValue(0.015));
   // Values from datasheet
   // radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
@@ -557,7 +558,7 @@ int main (int argc, char *argv[])
   {
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
-  std::cout << pdr << " " << cpsr << std::endl;
+  std::cout << simTime/appPeriod << pdr << " " << cpsr << std::endl;
 
   // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);
