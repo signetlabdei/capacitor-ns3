@@ -35,15 +35,19 @@ NS_OBJECT_ENSURE_REGISTERED (PeriodicSender);
 TypeId
 PeriodicSender::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::PeriodicSender")
-    .SetParent<Application> ()
-    .AddConstructor<PeriodicSender> ()
-    .SetGroupName ("lorawan")
-    .AddAttribute ("Interval", "The interval between packet sends of this app",
-                   TimeValue (Seconds (0)),
-                   MakeTimeAccessor (&PeriodicSender::GetInterval,
-                                     &PeriodicSender::SetInterval),
-                   MakeTimeChecker ());
+  static TypeId tid =
+      TypeId ("ns3::PeriodicSender")
+          .SetParent<Application> ()
+          .AddConstructor<PeriodicSender> ()
+          .SetGroupName ("lorawan")
+          .AddTraceSource ("GeneratedPacket",
+                           "Callback fired when an APP packet is generated",
+                           MakeTraceSourceAccessor (&PeriodicSender::m_generatedPacket),
+                           "ns3::PeriodicSender::EmptyCallback")
+  .AddAttribute ("Interval", "The interval between packet sends of this app",
+                 TimeValue (Seconds (0)),
+                 MakeTimeAccessor (&PeriodicSender::GetInterval, &PeriodicSender::SetInterval),
+                 MakeTimeChecker ());
   // .AddAttribute ("PacketSizeRandomVariable", "The random variable that determines the shape of the packet size, in bytes",
   //                StringValue ("ns3::UniformRandomVariable[Min=0,Max=10]"),
   //                MakePointerAccessor (&PeriodicSender::m_pktSizeRV),
@@ -119,6 +123,8 @@ PeriodicSender::SendPacket (void)
       packet = Create<Packet> (m_basePktSize);
     }
   m_mac->Send (packet);
+  // Fire the callback
+  m_generatedPacket();
 
   // Schedule the next SendPacket event
   m_sendEvent = Simulator::Schedule (m_interval, &PeriodicSender::SendPacket,

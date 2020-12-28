@@ -79,6 +79,10 @@ public:
    */
   void StopApplication (void);
 
+  // Define an emptyCallback
+  typedef void (*EmptyCallback) (void);
+  TracedCallback<> m_generatedPacket;
+
 private:
   /**
    * The interval between to consecutive send events
@@ -104,7 +108,6 @@ private:
    * The packet size.
    */
   uint8_t m_basePktSize;
-
 
   /**
    * The random variable that adds bytes to the packet size

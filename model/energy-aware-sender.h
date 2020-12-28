@@ -81,6 +81,10 @@ public:
 
   void PhyStartedSendingCallback (Ptr<Packet const> packet, uint32_t id);
 
+  // Define an emptyCallback
+  typedef void (*EmptyCallback) (void);
+  TracedCallback<> m_generatedPacket;
+
 private:
   void EnergyAwareSendPacketCallback (double);
 

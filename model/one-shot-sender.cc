@@ -20,11 +20,13 @@
 
 #include "ns3/one-shot-sender.h"
 #include "ns3/class-a-end-device-lorawan-mac.h"
+#include "ns3/one-shot-sender-helper.h"
 #include "ns3/pointer.h"
 #include "ns3/log.h"
 #include "ns3/double.h"
 #include "ns3/string.h"
 #include "ns3/lora-net-device.h"
+#include "ns3/trace-source-accessor.h"
 
 namespace ns3 {
 namespace lorawan {
@@ -36,14 +38,17 @@ NS_OBJECT_ENSURE_REGISTERED (OneShotSender);
 TypeId
 OneShotSender::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::OneShotSender")
-                          .SetParent<Application> ()
-                          .AddConstructor<OneShotSender> ()
-                          .SetGroupName ("lorawan")
-  .AddAttribute ("PacketSize", "Packet size",
-                 IntegerValue (10),
-                 MakeIntegerAccessor (&OneShotSender::m_packetSize),
-                 MakeIntegerChecker<int> ());
+  static TypeId tid =
+      TypeId ("ns3::OneShotSender")
+          .SetParent<Application> ()
+          .AddConstructor<OneShotSender> ()
+          .SetGroupName ("lorawan")
+          .AddTraceSource ("GeneratedPacket",
+                           "Callback fired when an APP packet is generated",
+                           MakeTraceSourceAccessor (&OneShotSender::m_generatedPacket),
+                           "ns3::OneShotSender::EmptyCallback")
+  .AddAttribute ("PacketSize", "Packet size", IntegerValue (10),
+                 MakeIntegerAccessor (&OneShotSender::m_packetSize), MakeIntegerChecker<int> ());
   return tid;
 }
 
@@ -79,6 +84,8 @@ OneShotSender::SendPacket (void)
   // Create and send a new packet
   Ptr<Packet> packet = Create<Packet> (m_packetSize);
   m_mac->Send (packet);
+  // Fire the callback
+  m_generatedPacket();
 }
 
 void

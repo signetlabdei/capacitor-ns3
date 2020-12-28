@@ -39,20 +39,24 @@ namespace ns3 {
     TypeId
     EnergyAwareSender::GetTypeId (void)
     {
-      static TypeId tid = TypeId ("ns3::EnergyAwareSender")
-        .SetParent<Application> ()
-        .AddConstructor<EnergyAwareSender> ()
-        .SetGroupName ("lorawan")
-        .AddAttribute ("EnergyThreshold", "The energy threshold over which sending the packet",
-                       DoubleValue (0),
-                       MakeDoubleAccessor (&EnergyAwareSender::GetEnergyThreshold,
-                                           &EnergyAwareSender::SetEnergyThreshold),
-                       MakeDoubleChecker<double> ())
-      .AddAttribute ("MinInterval", "The minimum interval between packet sends of this app",
-                     TimeValue (Seconds (0)),
-                     MakeTimeAccessor (&EnergyAwareSender::GetMinInterval,
-                                       &EnergyAwareSender::SetMinInterval),
-                     MakeTimeChecker ());
+      static TypeId tid =
+          TypeId ("ns3::EnergyAwareSender")
+              .SetParent<Application> ()
+              .AddConstructor<EnergyAwareSender> ()
+              .SetGroupName ("lorawan")
+              .AddTraceSource ("GeneratedPacket", "Callback fired when an APP packet is generated",
+                               MakeTraceSourceAccessor (&EnergyAwareSender::m_generatedPacket),
+                               "ns3::EnergyAwareSender::EmptyCallback")
+              .AddAttribute ("EnergyThreshold",
+                             "The energy threshold over which sending the packet", DoubleValue (0),
+                             MakeDoubleAccessor (&EnergyAwareSender::GetEnergyThreshold,
+                                                 &EnergyAwareSender::SetEnergyThreshold),
+                             MakeDoubleChecker<double> ())
+              .AddAttribute ("MinInterval", "The minimum interval between packet sends of this app",
+                             TimeValue (Seconds (0)),
+                             MakeTimeAccessor (&EnergyAwareSender::GetMinInterval,
+                                               &EnergyAwareSender::SetMinInterval),
+                             MakeTimeChecker ());
       // .AddAttribute ("PacketSizeRandomVariable", "The random variable that determines the shape of the packet size, in bytes",
       //                StringValue ("ns3::UniformRandomVariable[Min=0,Max=10]"),
       //                MakePointerAccessor (&EnergyAwareSender::m_pktSizeRV),
@@ -61,12 +65,12 @@ namespace ns3 {
     }
 
     EnergyAwareSender::EnergyAwareSender ()
-      : m_energyThreshold (0),
-        m_sendTime (Seconds(0)),
-        m_firstSending(true),
-        m_tryingToSend (false),
-        m_basePktSize (10),
-        m_pktSizeRV (0)
+        : m_energyThreshold (0),
+          m_sendTime (Seconds (0)),
+          m_firstSending (true),
+          m_tryingToSend (false),
+          m_basePktSize (10),
+          m_pktSizeRV (0)
     {
       NS_LOG_FUNCTION_NOARGS ();
     }
@@ -142,6 +146,9 @@ namespace ns3 {
       m_tryingToSend = true;
 
       m_mac->Send (packet);
+
+      // Fire the callback
+      m_generatedPacket();
 
       // Schedule the next SendPacket event
       // m_sendEvent = Simulator::Schedule (m_interval, &EnergyAwareSender::SendPacket,

@@ -48,6 +48,7 @@
 #include "src/lorawan/helper/capacitor-energy-source-helper.h"
 #include "src/lorawan/model/lora-tx-current-model.h"
 #include <algorithm>
+#include <bits/stdint-uintn.h>
 #include <ctime>
 #include <iostream>
 #include <string>
@@ -79,6 +80,7 @@ bool remainingVoltageCallbackFirstCall = true;
 bool energyConsumptionCallbackFirstCall = true;
 bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
+int generatedPacketsAPP = 0;
 
 // Callbcks
 
@@ -205,6 +207,14 @@ OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::Sta
   outputFile.close ();
 }
 
+void
+OnGeneratedPacket (void)    
+{
+  // NS_LOG_DEBUG("Generated packet at APP level");
+  generatedPacketsAPP = generatedPacketsAPP + 1;
+  NS_LOG_DEBUG("Generated APP packet = " << generatedPacketsAPP);
+}
+
 /***********
  ** MAIN  **
  **********/
@@ -232,7 +242,7 @@ int main (int argc, char *argv[])
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
@@ -394,6 +404,7 @@ int main (int argc, char *argv[])
         oneshotsenderHelper.Install(endDevices);
         oneshotsenderHelper.SetAttribute ("PacketSize", IntegerValue(packetSize));
         sendTime = sendTime + appPeriod;
+        
       }
     }
   else if (sender == "periodicSender")
@@ -504,7 +515,10 @@ int main (int argc, char *argv[])
   // Connect tracesources
   ///////////////////////
 
-  // Names::Add("Names/myEDmac", endDevices.Get(0)->GetObject<EndDeviceLorawanMac>());
+  Names::Add("Names/node0", endDevices.Get(0)->GetApplication(0));
+  ns3::Config::ConnectWithoutContext("/Names/node0/GeneratedPacket",
+                                     MakeCallback(&OnGeneratedPacket));
+
   Ptr<LoraNetDevice> loraDevice = endDevices.Get (0)->GetDevice (0)->GetObject<LoraNetDevice> ();
   Ptr<EndDeviceLorawanMac> myEDmac = loraDevice->GetMac ()->GetObject<EndDeviceLorawanMac> ();
   Ptr<EndDeviceLoraPhy> myEDphy = loraDevice->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
@@ -558,7 +572,7 @@ int main (int argc, char *argv[])
   {
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
-  std::cout << simTime/appPeriod << pdr << " " << cpsr << std::endl;
+  std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
 
   // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);

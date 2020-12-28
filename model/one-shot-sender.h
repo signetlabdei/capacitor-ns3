@@ -25,6 +25,7 @@
 #include "ns3/nstime.h"
 #include "ns3/lorawan-mac.h"
 #include "ns3/attribute.h"
+#include "ns3/traced-callback.h"
 
 namespace ns3 {
 namespace lorawan {
@@ -57,6 +58,10 @@ public:
    * Stop the application.
    */
   void StopApplication (void);
+
+  // Define an emptyCallback
+  typedef void (*EmptyCallback) (void);
+  TracedCallback<> m_generatedPacket;
 
 public:
   int m_packetSize; 
