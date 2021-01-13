@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
   // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
@@ -463,7 +463,7 @@ int main (int argc, char *argv[])
   radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
   radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
-  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
+  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0105055));
   radioEnergy.Set ("OffCurrentA", DoubleValue (0.0000055));
 
   //  // Basic Energy harvesting
@@ -573,6 +573,12 @@ int main (int argc, char *argv[])
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
   std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
+  std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
+                                                                      Seconds(simTime),
+                                                                      0);
+  std::cout << std::to_string (timeStatistics[0]) << " "
+            << std::to_string (timeStatistics[1]) << " " 
+            << std::to_string (timeStatistics[2]) << " " << std::endl;
 
   // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);
@@ -581,7 +587,7 @@ int main (int argc, char *argv[])
     {
       const char *c = filenameState.c_str ();
       std::ofstream outputFile;
-      // Delete contents of the file as it is opened
+      // Delete contents of the file as it is opened 
       outputFile.open (c, std::ofstream::out | std::ofstream::trunc);
       // Set the initial sleep state
       outputFile << 0 << " " << 0 << std::endl;
