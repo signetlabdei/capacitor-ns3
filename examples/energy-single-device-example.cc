@@ -241,9 +241,9 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
+  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
@@ -443,7 +443,7 @@ int main (int argc, char *argv[])
                 " ri " << ri <<
                 " R_eq_off " << Req_off);
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
-  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (600)));
+  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (Seconds (5)));
   capacitorHelper.Set ("FilenameVoltageTracking",
                       StringValue(filenameRemainingVoltage));
 
@@ -465,6 +465,7 @@ int main (int argc, char *argv[])
   radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
   radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.0105055));
   radioEnergy.Set ("OffCurrentA", DoubleValue (0.0000055));
+  radioEnergy.Set ("ReferenceVoltage", DoubleValue(V0));
 
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
@@ -573,12 +574,12 @@ int main (int argc, char *argv[])
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
   std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
-  std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
-                                                                      Seconds(simTime),
-                                                                      0);
-  std::cout << std::to_string (timeStatistics[0]) << " "
-            << std::to_string (timeStatistics[1]) << " " 
-            << std::to_string (timeStatistics[2]) << " " << std::endl;
+  // std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
+  //                                                                     Seconds(simTime),
+  //                                                                     0);
+  // std::cout << std::to_string (timeStatistics[0]) << " "
+  //           << std::to_string (timeStatistics[1]) << " " 
+  //           << std::to_string (timeStatistics[2]) << " " << std::endl;
 
   // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);

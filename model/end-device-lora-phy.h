@@ -284,17 +284,22 @@ public:
    */
   bool IsEnergyStateOk (void);
 
-protected:
-  /**
+    protected :
+      /**
    * Switch to the RX state
    */
-  bool SwitchToRx ();
+      bool SwitchToRx ();
 
   /**
    * Switch to the TX state
    */
   bool SwitchToTx (double txPowerDbm);
 
+  /**
+   * If a CapacitorEnergySource is present, call its function to estimate when
+   * energy would be depleted
+   */
+  void SetCheckForEnergyDepletion (void);
 
   /**
    * Trace source for when a packet is lost because it was using a SF different from

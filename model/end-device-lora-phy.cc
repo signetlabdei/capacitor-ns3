@@ -148,6 +148,7 @@ EndDeviceLoraPhy::SwitchToSleep (void)
     {
       (*i)->NotifySleep ();
     }
+  SetCheckForEnergyDepletion();
   return true;
 }
 
@@ -166,6 +167,7 @@ EndDeviceLoraPhy::SwitchToStandby (void)
         {
           (*i)->NotifyStandby ();
         }
+      SetCheckForEnergyDepletion ();
       return true;
     }
   return false;
@@ -188,6 +190,7 @@ EndDeviceLoraPhy::SwitchToRx (void)
         {
           (*i)->NotifyRxStart ();
         }
+      SetCheckForEnergyDepletion ();
       return true;
     }
   return false;
@@ -211,6 +214,7 @@ EndDeviceLoraPhy::SwitchToTx (double txPowerDbm)
             NS_LOG_DEBUG ("Notify tx start");
             (*i)->NotifyTxStart (txPowerDbm);
           }
+        SetCheckForEnergyDepletion ();
         return true;
       }
   return false;
@@ -235,6 +239,7 @@ EndDeviceLoraPhy::SwitchToIdle (void)
           {
             (*i)->NotifyIdle ();
           }
+        SetCheckForEnergyDepletion ();
         return true;
       }
   return false;
@@ -279,6 +284,7 @@ EndDeviceLoraPhy::SwitchToTurnOn (void)
         {
           (*i)->NotifyTurnOn ();
         }
+      SetCheckForEnergyDepletion ();
       return true;
     }
   return false;
@@ -357,6 +363,27 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
     NS_LOG_DEBUG ("Energy Source not found: returning true");
     return true;
 
+  }
+
+  void
+  EndDeviceLoraPhy::SetCheckForEnergyDepletion (void)
+  {
+    NS_LOG_FUNCTION (this);
+    Ptr<EnergySourceContainer> nodeEnergySourceContainer =
+        m_device->GetNode ()->GetObject<EnergySourceContainer> ();
+    Ptr<EnergySource> nodeEnergySource = nodeEnergySourceContainer->Get (0);
+    // If CapacitorEnergySource
+    Ptr<CapacitorEnergySource> capacitorEnergySource =
+        nodeEnergySource->GetObject<CapacitorEnergySource> ();
+    if (!(capacitorEnergySource == 0))
+      {
+        NS_LOG_DEBUG ("found capacitorEnergySource pointer");
+        capacitorEnergySource->SetCheckForEnergyDepletion ();
+      }
+    else
+      {
+        NS_LOG_DEBUG ("Capacitor source not found!");
+      }
   }
 
 } // lorawan

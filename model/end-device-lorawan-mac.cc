@@ -276,9 +276,9 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
           // If capacitor energy source
           if (!(capacitor == 0))
             {
-              double predictedVoltage =
-                  capacitor->PredictVoltageForLorawanState (EndDeviceLoraPhy::TX, duration);
               double actualVoltage = capacitor->GetActualVoltage ();
+              double predictedVoltage =
+                capacitor->PredictVoltageForLorawanState (EndDeviceLoraPhy::TX, actualVoltage, duration);
               double maxVoltage = capacitor->GetSupplyVoltage ();
               DoubleValue lowThreshold;
               capacitor->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);

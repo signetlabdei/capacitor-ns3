@@ -210,10 +210,7 @@ public:
   double GetOffCurrentA (void) const;
   void SetOffCurrentA (double offCurrentA);
 
-  /**
-   * Compute the load for a status using the reference voltage
-   */
-  double GetLoraDeviceCurrent (EndDeviceLoraPhy::State status);
+  double GetCurrentForState (EndDeviceLoraPhy::State state);
 
   /**
    * \returns Current state.
@@ -295,6 +292,9 @@ public:
 private:
   void DoDispose (void);
 
+  // TODO doc
+  void SetInitialEnergy (void);
+
   /**
    * \returns Current draw of device, at current state.
    *
@@ -323,12 +323,12 @@ private:
   double m_turnOnCurrentA; // current when turning on
   double m_referenceVoltage; // used with the current to determine the load
   Time m_turnOnDuration;
-  double m_sensingEnergy; // Constant energy cost due to sensing before TX
   // NOTICE VERY WELL: Current  Model linear or constant as possible choices
   Ptr<LoraTxCurrentModel> m_txCurrentModel; ///< current model
 
   /// This variable keeps track of the total energy consumed by this model.
   TracedValue<double> m_totalEnergyConsumption;
+  double m_v0; // voltage at the beginning of the current state
 
   // State variables.
   Ptr<LoraNetDevice> m_device; // A pointer to the device associated to this loranode

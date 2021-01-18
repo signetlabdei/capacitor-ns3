@@ -31,6 +31,7 @@
 #include "ns3/energy-source.h"
 #include "lora-radio-energy-model.h"
 #include "src/core/model/boolean.h"
+#include <cmath>
 
 namespace ns3 {
 namespace lorawan {
@@ -99,10 +100,6 @@ LoraRadioEnergyModel::GetTypeId (void)
               "EnterSleepIfDepleted", "Enter in sleep mode if energy is depleted - else turn off",
               BooleanValue (), MakeBooleanAccessor (&LoraRadioEnergyModel::m_enterSleepIfDepleted),
               MakeBooleanChecker ())
-          .AddAttribute ("SensingEnergy", "The constant amount of energy spent for sensing",
-                         DoubleValue (0),
-                         MakeDoubleAccessor (&LoraRadioEnergyModel::m_sensingEnergy),
-                         MakeDoubleChecker<double> ())
           .AddTraceSource (
               "TotalEnergyConsumption", "Total energy consumption of the radio device.",
               MakeTraceSourceAccessor (&LoraRadioEnergyModel::m_totalEnergyConsumption),
@@ -125,6 +122,7 @@ LoraRadioEnergyModel::LoraRadioEnergyModel ()
   m_listener->SetChangeStateCallback (MakeCallback (&DeviceEnergyModel::ChangeState, this));
   // set callback for updating the tx current
   m_listener->SetUpdateTxCurrentCallback (MakeCallback (&LoraRadioEnergyModel::SetTxCurrentFromModel, this));
+  m_v0 = -1;
 }
 
 LoraRadioEnergyModel::~LoraRadioEnergyModel ()
@@ -132,7 +130,6 @@ LoraRadioEnergyModel::~LoraRadioEnergyModel ()
   NS_LOG_FUNCTION (this);
   delete m_listener;
 }
-
 
 void
 LoraRadioEnergyModel::SetLoraNetDevice (Ptr<LoraNetDevice> device)
@@ -363,19 +360,14 @@ LoraRadioEnergyModel::ChangeState (int newState)
   Time duration = Simulator::Now () - m_lastUpdateTime;
   NS_ASSERT (duration.GetNanoSeconds () >= 0);     // check if duration is valid
 
-  // energy to decrease = current * voltage * time
   double energyToDecrease = 0.0;
 
   energyToDecrease = ComputeLoraEnergyConsumption (m_currentState, duration);
 
-  if (newState == EndDeviceLoraPhy::State::TX)
-    {
-      energyToDecrease += m_sensingEnergy;
-      NS_LOG_DEBUG ("Also decrease " << m_sensingEnergy << " J spent in sensing");
-    }
-
   // update total energy consumption
   m_totalEnergyConsumption += energyToDecrease;
+
+  NS_LOG_DEBUG("Energy to decrease: " << energyToDecrease << " total energy consumption " << m_totalEnergyConsumption);
 
   // update last update time stamp
   m_lastUpdateTime = Simulator::Now ();
@@ -397,30 +389,6 @@ LoraRadioEnergyModel::ChangeState (int newState)
       // update current state & last update time stamp
       SetLoraRadioState ((EndDeviceLoraPhy::State) newState);
       NS_LOG_DEBUG("[DEBUG] Set a new state");
-
-      // // Also update PHY
-      // Ptr<EndDeviceLoraPhy> edPhy = m_device->GetPhy ()->GetObject<EndDeviceLoraPhy> ();
-      // switch (newState)
-      // {
-      // case EndDeviceLoraPhy::STANDBY:
-      //   // This can not be done by this class
-      //   // TODO Implement for Class A devices
-      //   break;
-      // case EndDeviceLoraPhy::TX:
-      //   // This can not be done by this class
-      //   break;
-      // case EndDeviceLoraPhy::RX:
-      //   // This can not be done by this class
-      //   break;
-      // case EndDeviceLoraPhy::SLEEP:
-      //   edPhy->SwitchToSleep ();
-      //   break;
-      // case EndDeviceLoraPhy::OFF:
-      //   edPhy->SwitchToOff ();
-      //   break;
-      // default:
-      //   NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state: " << newState);
-      //   }
 
     }
 
@@ -552,6 +520,31 @@ LoraRadioEnergyModel::DoGetCurrentA (void) const
     }
 }
 
+double
+LoraRadioEnergyModel::GetCurrentForState (EndDeviceLoraPhy::State state)
+{
+  NS_LOG_FUNCTION (this);
+  switch (state)
+    {
+    case EndDeviceLoraPhy::STANDBY:
+      return m_standbyCurrentA;
+    case EndDeviceLoraPhy::TX:
+      return m_txCurrentA;
+    case EndDeviceLoraPhy::RX:
+      return m_rxCurrentA;
+    case EndDeviceLoraPhy::SLEEP:
+      return m_sleepCurrentA;
+    case EndDeviceLoraPhy::IDLE:
+      return m_idleCurrentA;
+    case EndDeviceLoraPhy::OFF:
+      return m_offCurrentA;
+    case EndDeviceLoraPhy::TURNON:
+      return m_turnOnCurrentA;
+    default:
+      NS_FATAL_ERROR ("LoraRadioEnergyModel:Undefined radio state:" << m_currentState);
+    }
+}
+
 void
 LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
 {
@@ -577,6 +570,7 @@ LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
       break;
     case EndDeviceLoraPhy::OFF:
       stateName = "OFF";
+      break;
     case EndDeviceLoraPhy::TURNON:
       stateName = "TURNON";
     }
@@ -585,39 +579,37 @@ LoraRadioEnergyModel::SetLoraRadioState (const EndDeviceLoraPhy::State state)
 }
 
 double
-LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State status,
+LoraRadioEnergyModel::ComputeLoraEnergyConsumption (EndDeviceLoraPhy::State state,
                                                     Time duration)
 {
-  NS_LOG_FUNCTION(this);
-  NS_LOG_DEBUG("State: " << status << " duration (s): " << duration.GetSeconds());
+  NS_LOG_FUNCTION(this << state << duration);
+  NS_LOG_DEBUG("State: " << state << " duration (s): " << duration.GetSeconds());
 
-  double energy = 0;
-  double voltage;
+  double current = GetCurrentForState(state);
+  double energyConsumption = 0;
   Ptr<CapacitorEnergySource> capacitor = m_source -> GetObject<CapacitorEnergySource>();
   if (!(capacitor == 0))
     {
-      voltage =
-          capacitor->PredictVoltageForLorawanState (status, duration);
-      NS_LOG_DEBUG("New voltage [V] = " << voltage );
+      NS_LOG_DEBUG("Iload " << current);
+      if (m_v0 < 0) // First state change
+        {
+          m_v0 = capacitor->GetInitialVoltage();
+        }
+      energyConsumption = capacitor->ComputeLoadEnergyConsumption (current, m_v0, duration);
+      m_v0 = capacitor->GetActualVoltage (); // The voltage in the capacitor is
+                                             // already up-to-date
     }
   else
       {
-        // TODO Check this...
-        NS_ABORT_MSG("Check energy source");
-        voltage = m_source->GetSupplyVoltage ();
+        double supplyVoltage = m_source->GetSupplyVoltage ();
+        energyConsumption = duration.GetSeconds () * current * supplyVoltage;
       }
 
-  double load = m_referenceVoltage/GetCurrent (status);
-  double current = voltage/load;
-  NS_LOG_DEBUG ("load = " << load);
-
-  // The following is the same as E = P t, with P = (v(t))^2/Rload
-  energy = duration.GetSeconds () * current * voltage;
-
-  NS_LOG_DEBUG("new energy = " << energy);
-  return energy;
+  NS_LOG_DEBUG ("energyconsumption=" << energyConsumption);
+  return energyConsumption;
 }
 
+    
 
 // -------------------------------------------------------------------------- //
 

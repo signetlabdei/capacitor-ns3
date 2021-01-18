@@ -27,9 +27,9 @@
 #include "ns3/event-id.h"
 #include "ns3/energy-source.h"
 #include "ns3/end-device-lora-phy.h"
+#include <vector>
 
 namespace ns3 {
-
 
 /**
  * \ingroup energy
@@ -122,16 +122,31 @@ public:
   bool IsDepleted (void);
 
   /**
-   * Compute new voltage given Iload and time duration
+   * Compute new voltage given Iload and time duration starting from initial voltage
    */
-  double ComputeVoltage (double Iload, Time duration);
+  double ComputeVoltage (double initialVoltage, double Iload, Time duration);
 
   /**
-   * Predict voltage variation for a given state and duration
+   * Predict voltage variation for a given state and duration starting from initialVoltage
    */
   double PredictVoltageForLorawanState (lorawan::EndDeviceLoraPhy::State status,
-                                      Time duration);
+                                        double initialvoltage, Time duration);
 
+  /**
+   * Set event to check energy depletion when estimated while staying in this state
+   */
+  void SetCheckForEnergyDepletion (void);
+
+  /**
+   * Compute resistances: Rload, ri, Req
+   */
+  std::vector<double> GetResistances (void);
+
+  /**
+   * Compute the energy consumption of the load only when starting from voltage
+   * V0 and consuming Iload for a given duration.
+   */
+  double ComputeLoadEnergyConsumption (double Iload, double V0, Time duration);
 
 private:
   /// Defined in ns3::Object
@@ -187,6 +202,7 @@ private:
   TracedValue<double> m_remainingEnergyJ; // remaining energy, in Joules
   TracedValue<double> m_actualVoltageV; // the voltage at the present moment, in V
   EventId m_voltageUpdateEvent; // voltage update event
+  EventId m_checkForEnergyDepletion; // Event called when we expect to deplete energy
   Time m_lastUpdateTime; // last update time
   Time m_updateInterval; // voltage update interval
 
