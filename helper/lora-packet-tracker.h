@@ -159,6 +159,14 @@ public:
    * of packets that generated a successful acknowledgment.
    */
   std::string CountMacPacketsGloballyCpsr (Time startTime, Time stopTime);
+
+  /**
+   * Function returning the mean and variance of the time between PHY
+   * transmissions for a given ED
+   * Output: nPackets, meanT, varianceT
+   */
+  std::vector<double> TxTimeStatisticsPerEd (Time startTime, Time endTime, uint edId);
+
 private:
   PhyPacketData m_packetTracker;
   MacPacketData m_macPacketTracker;

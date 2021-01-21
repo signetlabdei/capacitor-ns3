@@ -16,14 +16,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Davide Magrin <magrinda@dei.unipd.it>
+ * Author: Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #include "lora-packet-tracker.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/lorawan-mac-header.h"
+#include <algorithm>
+#include <cmath>
+#include <numeric>
 #include <iostream>
+#include <vector>
 #include <fstream>
+#include <string>
 
 namespace ns3 {
 namespace lorawan {
@@ -401,5 +408,55 @@ LoraPacketTracker::PrintPhyPacketsPerGw (Time startTime, Time stopTime,
       std::to_string (received);
   }
 
+std::vector<double>
+LoraPacketTracker::TxTimeStatisticsPerEd (Time startTime, Time stopTime,
+                                          uint edId)
+{
+  NS_LOG_FUNCTION (this);
+
+  std::vector<double> outputTx (3, 0); // nPackets, meanT, varianceT
+  std::vector<double> txTime;
+  std::vector<double> txTimeIntervals;
+  double meanTxInterval = 0;
+  double tmpVariance = 0;
+
+  for (auto itPhy = m_packetTracker.begin (); itPhy != m_packetTracker.end (); ++itPhy)
+    {
+      if ((*itPhy).second.sendTime >= startTime && (*itPhy).second.sendTime <= stopTime)
+        {
+          if ((*itPhy).second.senderId == edId)
+            {
+              outputTx.at (0)++;
+
+              NS_LOG_DEBUG ("Dealing with packet " << (*itPhy).second.packet);
+              NS_LOG_DEBUG ("This packet was sent at time "
+                            << (*itPhy).second.sendTime.GetSeconds ());
+
+              txTime.push_back ((*itPhy).second.sendTime.GetSeconds ());
+            }
+        }
+    }
+  std::sort (txTime.begin (), txTime.end ());
+  for (uint i = 1; i < txTime.size (); i++)
+    {
+      double interval = txTime.at (i) - txTime.at (i - 1);
+      txTimeIntervals.push_back (interval);
+    }
+  NS_LOG_DEBUG ("TxTime size= " << txTime.size () << " txTimeIntervals size "
+                                << txTimeIntervals.size ());
+  meanTxInterval = std::accumulate (txTimeIntervals.begin (), txTimeIntervals.end (), 0) /
+                   txTimeIntervals.size ();
+
+  // Compute variance
+  for (uint i = 0; i < txTimeIntervals.size (); i++)
+    {
+      tmpVariance = tmpVariance + std::pow (txTimeIntervals.at (i) - meanTxInterval, 2);
+    }
+  outputTx.at (1) = meanTxInterval;
+  outputTx.at (2) = std::sqrt(tmpVariance / txTimeIntervals.size ());
+
+  return outputTx;
 }
-}
+
+} // namespace lorawan
+} // namespace ns3
