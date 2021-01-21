@@ -51,9 +51,9 @@ CapacitorEnergySource::GetTypeId (void)
           .SetParent<EnergySource> ()
           .SetGroupName ("Energy")
           .AddConstructor<CapacitorEnergySource> ()
-          .AddAttribute ("Capacity", "Capacity of the capacitor [F]",
+          .AddAttribute ("Capacitance", "Capacitance of the capacitor [F]",
                          DoubleValue (0.01), // 10 mF
-                         MakeDoubleAccessor (&CapacitorEnergySource::m_capacity),
+                         MakeDoubleAccessor (&CapacitorEnergySource::m_capacitance),
                          MakeDoubleChecker<double> ())
           .AddAttribute ("CapacitorEnergySourceInitialVoltageV",
                          "Initial voltage of the capacitor.",
@@ -126,7 +126,7 @@ CapacitorEnergySource::SetInitialVoltage (double initialVoltageV)
     }
 
   m_actualVoltageV = m_initialVoltageV;
-  double initialEnergy = m_capacity*pow(m_initialVoltageV, 2)/2;
+  double initialEnergy = m_capacitance*pow(m_initialVoltageV, 2)/2;
   m_remainingEnergyJ = initialEnergy;
   NS_LOG_DEBUG ("Set initial voltage = " << m_initialVoltageV
                 << " V, remaining energy = " << initialEnergy);
@@ -137,11 +137,11 @@ CapacitorEnergySource::SetInitialEnergy (double initialEnergyJ)
 {
   NS_LOG_FUNCTION (this << initialEnergyJ);
   NS_ASSERT (initialEnergyJ >= 0);
-  double voltage = sqrt (2 * initialEnergyJ / m_capacity);
+  double voltage = sqrt (2 * initialEnergyJ / m_capacitance);
   if (voltage > m_supplyVoltageV)
     {
       m_initialVoltageV = m_supplyVoltageV;
-      m_remainingEnergyJ = m_capacity * pow (m_initialVoltageV, 2) / 2;
+      m_remainingEnergyJ = m_capacitance* pow (m_initialVoltageV, 2) / 2;
     }
   else
     {
@@ -195,7 +195,7 @@ double
 CapacitorEnergySource::GetInitialEnergy (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_capacity*pow(GetInitialVoltage(), 2)/2;
+  return m_capacitance*pow(GetInitialVoltage(), 2)/2;
 }
 
 double
@@ -213,7 +213,7 @@ CapacitorEnergySource::GetEnergyFraction (void)
   NS_LOG_FUNCTION (this);
   // update energy source to get the latest remaining energy.
   UpdateEnergySource ();
-  double initialEnergy = m_capacity*pow(m_initialVoltageV, 2)/2;
+  double initialEnergy = m_capacitance*pow(m_initialVoltageV, 2)/2;
   return m_remainingEnergyJ / initialEnergy;
 }
 
@@ -281,7 +281,7 @@ CapacitorEnergySource::UpdateEnergySource (void)
     TrackVoltage();
 
     // Update remaining energy
-    m_remainingEnergyJ = m_capacity * pow (m_actualVoltageV, 2) / 2;
+    m_remainingEnergyJ = m_capacitance* pow (m_actualVoltageV, 2) / 2;
     NS_LOG_DEBUG("[DEBUG] Update remaining energy= " << m_remainingEnergyJ);
 }
 
@@ -297,7 +297,7 @@ CapacitorEnergySource::ComputeLoadEnergyConsumption (double Iload, double V0,
   double Req = r.at(2);
   // Define constants
   double A = m_supplyVoltageV*Req/(ri);
-  double tau = Req*m_capacity;
+  double tau = Req*m_capacitance;
   double t = duration.GetSeconds();
 
   // Compute the eneergy by integrating the power
@@ -382,11 +382,11 @@ CapacitorEnergySource::HandleEnergyRechargedEvent (void)
   NS_LOG_DEBUG("Previous voltage: " << initialVoltage <<
                " duration (s) " << durationS <<
                " Rl " << Rload);
-  double voltage = m_supplyVoltageV*(Req/ri)*(1 - exp(-durationS/(Req * m_capacity))) +
-    initialVoltage*exp(-durationS/(Req*m_capacity));
+  double voltage = m_supplyVoltageV*(Req/ri)*(1 - exp(-durationS/(Req * m_capacitance))) +
+    initialVoltage*exp(-durationS/(Req*m_capacitance));
 
   NS_LOG_DEBUG ("Previous voltage: " << initialVoltage <<
-                " exp= " << exp(-durationS/(Rload*m_capacity)) <<
+                " exp= " << exp(-durationS/(Rload*m_capacitance)) <<
                 " , computed voltage = " << voltage  );
   return voltage;
   }
@@ -509,7 +509,7 @@ CapacitorEnergySource::SetCheckForEnergyDepletion (void)
       Req = (Rload * ri) / (Rload + ri);
     }
   double A = m_supplyVoltageV*Req/ri;
-  double t = - Req*m_capacity*std::log((vmin - A)/
+  double t = - Req*m_capacitance*std::log((vmin - A)/
                                      (m_actualVoltageV - A));
   NS_LOG_DEBUG("Delay is [s] " << t);
   NS_LOG_DEBUG ("Actual voltage: " << m_actualVoltageV << " vmin: " << vmin << " A " << A );

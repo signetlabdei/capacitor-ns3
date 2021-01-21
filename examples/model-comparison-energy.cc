@@ -59,7 +59,7 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE ("ModelComparisonEnergy");
 
 // Inputs
-double capacity = 6;
+double capacitance = 6;
 double simTime = 5;
 double appPeriod = 10;
 int packetSize = 10;
@@ -127,7 +127,7 @@ int main (int argc, char *argv[])
   // cmd.AddValue ("pathToInputFile",
   //               "Absolute path till the input file for the varaible energy harvester",
   //               pathToInputFile);
-  cmd.AddValue ("capacity", "Capacity in mF", capacity);
+  cmd.AddValue ("capacitance", "Capacitance in mF", capacitance);
   cmd.AddValue ("packetSize", "PacketSize", packetSize);
   cmd.AddValue ("replySize", "ReplySize", replySize);
   cmd.AddValue ("dr", "dr", dr);
@@ -284,7 +284,7 @@ int main (int argc, char *argv[])
     {
       EnergyAwareSenderHelper energyAwareSenderHelper;
       double voltageTh = 0.3;
-      double energyTh = (capacity/1000) * pow (voltageTh, 2) / 2; // capacity in mF
+      double energyTh = (capacitance/1000) * pow (voltageTh, 2) / 2; // capacitancein mF
       energyAwareSenderHelper.SetEnergyThreshold (energyTh); // (0.29);
       energyAwareSenderHelper.SetMinInterval (Seconds(appPeriod));
       energyAwareSenderHelper.SetPacketSize (packetSize);
@@ -309,11 +309,11 @@ int main (int argc, char *argv[])
 
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000)); // capacity in mF
+  capacitorHelper.Set ("Capacitance", DoubleValue (capacitance/1000)); // capacitance in mF
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.7));
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
-  // Assumption that the C does not reach full capacity because of some
+  // Assumption that the C does not reach full capacitance because of some
   // consumption in the OFF state
   double E = 3.3; // V
   double Ioff = 0.0000055;

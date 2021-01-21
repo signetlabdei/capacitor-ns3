@@ -194,7 +194,7 @@ private:
 private:
   double m_initialVoltageV; // initial voltage, in Volt
   double m_supplyVoltageV; // supply voltage, in Volts
-  double m_capacity; // capacity, in Farad
+  double m_capacitance; //capacitance, in Farad
   double m_lowVoltageTh; // low voltage threshold, as a fraction of the initial voltage
   double m_highVoltageTh; // high voltage threshold, as a fraction of the initial voltage
   bool m_depleted; // set to true when the remaining energy goes below the low threshold,

@@ -62,7 +62,7 @@ NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 // Inputs
 double simTime = 100;
 double appPeriod = 10;
-double capacity = 6; // mF
+double capacitance = 6; // mF
 int packetSize = 10;
 double eh = 0.001;
 uint8_t dr = 5;
@@ -226,7 +226,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("pathToInputFile",
                 "Absolute path till the input file for the varaible energy harvester",
                 pathToInputFile);
-  cmd.AddValue ("capacity", "Capacity [mF]", capacity);
+  cmd.AddValue ("capacitance", "capacitance[mF]",capacitance);
   cmd.AddValue ("simTime", "Simulation time [s]", simTime);
   cmd.AddValue ("appPeriod", "App period [s]", appPeriod);
   cmd.AddValue ("confirmed", "Send confirmed message", confirmed);
@@ -241,9 +241,9 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-  LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
@@ -388,7 +388,7 @@ int main (int argc, char *argv[])
     {
       EnergyAwareSenderHelper energyAwareSenderHelper;
       double voltageTh = 0.2;
-      double energyTh = capacity/1000 * pow (voltageTh, 2) / 2;
+      double energyTh =capacitance/1000 * pow (voltageTh, 2) / 2;
       energyAwareSenderHelper.SetEnergyThreshold (energyTh); // (0.29);
       energyAwareSenderHelper.SetMinInterval (Seconds (appPeriod));
       energyAwareSenderHelper.SetPacketSize (19);
@@ -421,11 +421,11 @@ int main (int argc, char *argv[])
 
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("Capacity", DoubleValue (capacity/1000));
+  capacitorHelper.Set ("capacitance", DoubleValue (capacitance/1000));
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.9090)); // 3 V
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
-  // Assumption that the C does not reach full capacity because of some
+  // Assumption that the C does not reach full capacitance because of some
   // consumption in the OFF state
   double E = 3.3; // V
   double Ioff = 0.0000055;
