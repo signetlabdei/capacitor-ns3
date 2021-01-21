@@ -443,14 +443,14 @@ int main (int argc, char *argv[])
                 " ri " << ri <<
                 " R_eq_off " << Req_off);
   capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
-  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (Seconds (5)));
+  capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (500)));
   capacitorHelper.Set ("FilenameVoltageTracking",
                       StringValue(filenameRemainingVoltage));
 
   LoraRadioEnergyModelHelper radioEnergy;
   radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
   radioEnergy.Set ("TurnOnDuration",
-                   TimeValue (Seconds (13)));
+                   TimeValue (Seconds (0.3)));
   radioEnergy.Set ("TurnOnCurrentA", DoubleValue(0.015));
   // Values from datasheet
   // radioEnergy.Set ("TxCurrentA", DoubleValue (0.028)); // check - there are different values
