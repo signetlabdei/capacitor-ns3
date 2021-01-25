@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Davide Magrin <magrinda@dei.unipd.it>
+ * Author: Martina Capuzzo <capuzzom@dei.unipd.it>
  */
 
 #ifndef LORA_PACKET_TRACKER_H
@@ -24,6 +25,7 @@
 #include "ns3/packet.h"
 #include "ns3/nstime.h"
 
+#include <bits/stdint-uintn.h>
 #include <map>
 #include <string>
 
@@ -144,10 +146,19 @@ public:
    * network. In this case, a MAC layer packet is labeled as successful if it
    * was successful at at least one of the available gateways.
    *
+   */
+
+  /**
+   * Count MAC packets per ED
+   */
+  std::vector<uint> CountMacPacketsPerEd (Time startTime, Time stopTime,
+                                          uint32_t edId);
+
+      /**
    * This returns a string containing the number of sent packets and the number
    * of packets that were received by at least one gateway.
    */
-  std::string CountMacPacketsGlobally (Time startTime, Time stopTime);
+      std::string CountMacPacketsGlobally (Time startTime, Time stopTime);
 
   /**
    * Count packets to evaluate the global performance at MAC level of the whole
@@ -165,7 +176,7 @@ public:
    * transmissions for a given ED
    * Output: nPackets, meanT, varianceT
    */
-  std::vector<double> TxTimeStatisticsPerEd (Time startTime, Time endTime, uint edId);
+  std::vector<double> TxTimeStatisticsPerEd (Time startTime, Time endTime, uint32_t edId);
 
 private:
   PhyPacketData m_packetTracker;

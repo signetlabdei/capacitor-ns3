@@ -25,6 +25,7 @@
 #include "ns3/simulator.h"
 #include "ns3/lorawan-mac-header.h"
 #include <algorithm>
+#include <bits/stdint-uintn.h>
 #include <cmath>
 #include <numeric>
 #include <iostream>
@@ -355,6 +356,30 @@ LoraPacketTracker::PrintPhyPacketsPerGw (Time startTime, Time stopTime,
   return output;
 }
 
+std::vector<uint>
+LoraPacketTracker::CountMacPacketsPerEd (Time startTime, Time stopTime, uint32_t edId)
+{
+  NS_LOG_FUNCTION (this << startTime << stopTime);
+
+  std::vector<uint> v (2, 0);
+  for (auto it = m_macPacketTracker.begin (); it != m_macPacketTracker.end (); ++it)
+    {
+      if ((*it).second.sendTime >= startTime && (*it).second.sendTime <= stopTime)
+        {
+          if ((*it).second.senderId == edId)
+            {
+              v.at (0)++;
+              if ((*it).second.receptionTimes.size ())
+                {
+                  v.at (1)++;
+                }
+            }
+        }
+    }
+
+  return v;
+}
+
   std::string
   LoraPacketTracker::CountMacPacketsGlobally (Time startTime, Time stopTime)
   {
@@ -410,7 +435,7 @@ LoraPacketTracker::PrintPhyPacketsPerGw (Time startTime, Time stopTime,
 
 std::vector<double>
 LoraPacketTracker::TxTimeStatisticsPerEd (Time startTime, Time stopTime,
-                                          uint edId)
+                                          uint32_t edId)
 {
   NS_LOG_FUNCTION (this);
 

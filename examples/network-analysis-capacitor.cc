@@ -46,6 +46,10 @@
 #include "src/lorawan/model/capacitor-energy-source.h"
 #include "src/lorawan/helper/capacitor-energy-source-helper.h"
 #include "src/lorawan/model/lora-tx-current-model.h"
+#include "ns3/correlated-shadowing-propagation-loss-model.h"
+#include "ns3/building-penetration-loss.h"
+#include "ns3/building-allocator.h"
+#include "ns3/buildings-helper.h"
 #include <algorithm>
 #include <bits/stdint-uintn.h>
 #include <cmath>
@@ -62,7 +66,7 @@ NS_LOG_COMPONENT_DEFINE ("NetworkAnalysisCapacitor");
 // Inputs
 double simTime = 3600;
 double appPeriod = 300;
-double capacitance= 10; // mF
+double capacitance= 200; // mF
 int packetSize = 10;
 int nDevices = 1;
 double radius = 1000;
@@ -87,7 +91,9 @@ bool enoughEnergyCallbackFirstCall = true;
 bool stateChangeCallbackFirstCall = true;
 int generatedPacketsAPP = 0;
 
-// Callbcks
+//////////////
+// Callbcks //
+//////////////
 
 void
 OnRemainingEnergyChange (double oldRemainingEnergy, double remainingEnergy)
@@ -230,7 +236,9 @@ int main (int argc, char *argv[])
   // cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
   //                enableVariableHarvester);
   // cmd.AddValue ("sun", "Input from sunny day", sun);
-  cmd.AddValue ("eh", "eh", eh);
+  cmd.AddValue ("eh",
+                "Harvested power [W] - eh=-1 data for sunny day, eh=-2 data for cloudy day",
+                eh);
   cmd.AddValue ("sender", "Application sender [energyAwareSender, periodicSender, multipleShots]", sender);
   cmd.AddValue ("voltageThEnergyAwareSender",
                 "Voltage threshold above which the packet is sent",
@@ -272,6 +280,7 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnableAll (LOG_PREFIX_TIME);
+
   // Set SF
   Config::SetDefault ("ns3::EndDeviceLorawanMac::DataRate", UintegerValue (dr));
 
@@ -288,7 +297,7 @@ int main (int argc, char *argv[])
       enableVariableHarvester = true;
       filenameHarvester = pathToInputFile + filenameHarvesterCloudy;
     }
-  else // uniform harvester
+  else // constant harvester
     {
       enableVariableHarvester = false;
     }
@@ -355,7 +364,6 @@ int main (int argc, char *argv[])
   mobility.SetPositionAllocator ("ns3::UniformDiscPositionAllocator", "rho", DoubleValue (radius),
                                  "X", DoubleValue (0.0), "Y", DoubleValue (0.0));
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   // Assign a mobility model to the node
   mobility.Install (endDevices);
 
@@ -416,6 +424,42 @@ int main (int argc, char *argv[])
       macHelper.SetSpreadingFactorsUp (endDevices, gateways, channel);
     }
 
+
+  /**********************
+   *  Handle buildings  *
+   **********************/
+
+  double xLength = 130;
+  double deltaX = 32;
+  double yLength = 64;
+  double deltaY = 17;
+  int gridWidth = 2 * radius / (xLength + deltaX);
+  int gridHeight = 2 * radius / (yLength + deltaY);
+  if (realisticChannelModel == false)
+    {
+      gridWidth = 0;
+      gridHeight = 0;
+    }
+  Ptr<GridBuildingAllocator> gridBuildingAllocator;
+  gridBuildingAllocator = CreateObject<GridBuildingAllocator> ();
+  gridBuildingAllocator->SetAttribute ("GridWidth", UintegerValue (gridWidth));
+  gridBuildingAllocator->SetAttribute ("LengthX", DoubleValue (xLength));
+  gridBuildingAllocator->SetAttribute ("LengthY", DoubleValue (yLength));
+  gridBuildingAllocator->SetAttribute ("DeltaX", DoubleValue (deltaX));
+  gridBuildingAllocator->SetAttribute ("DeltaY", DoubleValue (deltaY));
+  gridBuildingAllocator->SetAttribute ("Height", DoubleValue (6));
+  gridBuildingAllocator->SetBuildingAttribute ("NRoomsX", UintegerValue (2));
+  gridBuildingAllocator->SetBuildingAttribute ("NRoomsY", UintegerValue (4));
+  gridBuildingAllocator->SetBuildingAttribute ("NFloors", UintegerValue (2));
+  gridBuildingAllocator->SetAttribute (
+      "MinX", DoubleValue (-gridWidth * (xLength + deltaX) / 2 + deltaX / 2));
+  gridBuildingAllocator->SetAttribute (
+      "MinY", DoubleValue (-gridHeight * (yLength + deltaY) / 2 + deltaY / 2));
+  BuildingContainer bContainer = gridBuildingAllocator->Create (gridWidth * gridHeight);
+
+  BuildingsHelper::Install (endDevices);
+  BuildingsHelper::Install (gateways);
+
   /*********************************************
    *  Install applications on the end devices  *
    *********************************************/
@@ -439,7 +483,6 @@ int main (int argc, char *argv[])
         oneshotsenderHelper.Install(endDevices);
         oneshotsenderHelper.SetAttribute ("PacketSize", IntegerValue(packetSize));
         sendTime = sendTime + appPeriod;
-        
       }
     }
   else if (sender == "periodicSender")
@@ -455,7 +498,7 @@ int main (int argc, char *argv[])
    ************************/
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("capacitance", DoubleValue (capacitance/1000));
+  capacitorHelper.Set ("Capacitance", DoubleValue (capacitance/1000));
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.9090)); // 3 V
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
@@ -481,18 +524,6 @@ int main (int argc, char *argv[])
   capacitorHelper.Set ("FilenameVoltageTracking",
                       StringValue(filenameRemainingVoltage));
 
-  LoraRadioEnergyModelHelper radioEnergy;
-  radioEnergy.Set("EnterSleepIfDepleted", BooleanValue(false));
-  radioEnergy.Set ("TurnOnDuration",
-                   TimeValue (Seconds (13)));
-  radioEnergy.Set ("TurnOnCurrentA", DoubleValue(0.015));
-  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011)); 
-  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
-  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
-  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
-  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
-  radioEnergy.Set ("OffCurrentA", DoubleValue (0.0000055));
-
   //  // Basic Energy harvesting
   BasicEnergyHarvesterHelper harvesterHelper;
   harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval",
@@ -507,14 +538,26 @@ int main (int argc, char *argv[])
   VariableEnergyHarvesterHelper variableEhHelper;
   variableEhHelper.Set("Filename", StringValue(filenameHarvester));
 
+  LoraRadioEnergyModelHelper radioEnergy;
+  radioEnergy.Set ("EnterSleepIfDepleted", BooleanValue (false));
+  radioEnergy.Set ("TurnOnDuration", TimeValue (Seconds (13)));
+  radioEnergy.Set ("TurnOnCurrentA", DoubleValue (0.015));
+  radioEnergy.Set ("TxCurrentA", DoubleValue (0.028011));
+  radioEnergy.Set ("IdleCurrentA", DoubleValue (0.000007));
+  radioEnergy.Set ("RxCurrentA", DoubleValue (0.011011));
+  radioEnergy.Set ("SleepCurrentA", DoubleValue (0.0000056));
+  radioEnergy.Set ("StandbyCurrentA", DoubleValue (0.010511));
+  radioEnergy.Set ("OffCurrentA", DoubleValue (0.0000055));
+
   // INSTALLATION ON EDs
+
   // install source on EDs' nodes
   EnergySourceContainer sources = capacitorHelper.Install (endDevices);
   // install device model
   DeviceEnergyModelContainer deviceModels =
     radioEnergy.Install (endDevicesNetDevices, sources);
 
-  Names::Add ("/Names/EnergySource", sources.Get(0));
+  // Names::Add ("/Names/EnergySource", sources.Get(0));
 
   if (enableVariableHarvester)
   {
@@ -528,11 +571,11 @@ int main (int argc, char *argv[])
   ///////////////////////
   // Connect tracesources
   ///////////////////////
-  if (print && nDevices == 1)
+  if (nDevices == 1)
     {
-      int j = 1;
+      int j = 0;
       // for (j = 0; j == nDevices; ++j)
-        {
+        // {
           Ptr<Node> node = endDevices.Get(j);
           Names::Add ("Names/nodeApp", node->GetApplication (0));
           Ptr<LoraNetDevice> loraNetDevice = node->GetDevice (0)->GetObject<LoraNetDevice> ();
@@ -545,8 +588,9 @@ int main (int argc, char *argv[])
           deviceModels.Get (j)->TraceConnectWithoutContext (
               "TotalEnergyConsumption", MakeCallback (&OnDeviceEnergyConsumption));
           ns3::Config::ConnectWithoutContext("/Names/nodeApp/GeneratedPacket",
-                                             MakeCallback(&OnGeneratedPacket()));
-        }
+                                             MakeCallback(&OnGeneratedPacket));
+          NS_LOG_DEBUG("Tracesources connected");
+        // }
     }
 
   ////////////
@@ -580,7 +624,9 @@ int main (int argc, char *argv[])
 
   Simulator::Run ();
 
+  //////////
   // Outputs
+  //////////
   std::string pdr = tracker.CountMacPacketsGlobally (Seconds(0), Seconds(simTime));
   std::string cpsr = "0 0";
   if (confirmed>0)
@@ -589,7 +635,10 @@ int main (int argc, char *argv[])
   }
   if (nDevices == 1)
     {
+      
       std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
+      std::vector<uint> v = tracker.CountMacPacketsPerEd(Seconds(0), Seconds(simTime), 0);
+      std::cout << std::to_string(v.at(0)) << " " << std::to_string(v.at(1)) << std::endl;
     }
   else
     {
