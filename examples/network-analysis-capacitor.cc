@@ -72,7 +72,7 @@ int nDevices = 1;
 double radius = 1000;
 double eh = 0.001;
 double voltageThEnergyAwareSender = 0.2;
-int8_t dr = 5;
+uint8_t dr = 5;
 int confirmed = 0;
 bool realisticChannelModel = false; // Channel model
 bool print = false; // Output control
@@ -635,17 +635,14 @@ int main (int argc, char *argv[])
   {
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
-  if (nDevices == 1)
-    {
-      
-      std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
-      std::vector<uint> v = tracker.CountMacPacketsPerEd(Seconds(0), Seconds(simTime), 0);
-      std::cout << std::to_string(v.at(0)) << " " << std::to_string(v.at(1)) << std::endl;
-    }
-  else
-    {
-      std::cout << "0 " << pdr << " " << cpsr << std::endl;
-    }
+  // if (nDevices == 1)
+  //   {
+  //     std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
+  //     std::vector<uint> v = tracker.CountMacPacketsPerEd(Seconds(0), Seconds(simTime), 0);
+  //     std::cout << std::to_string(v.at(0)) << " " << std::to_string(v.at(1)) << std::endl;
+  //   }
+  
+  std::cout << pdr << " " << cpsr << std::endl;
 
   if (print && nDevices == 1)
     {

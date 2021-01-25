@@ -421,7 +421,7 @@ int main (int argc, char *argv[])
 
 
   CapacitorEnergySourceHelper capacitorHelper;
-  capacitorHelper.Set ("capacitance", DoubleValue (capacitance/1000));
+  capacitorHelper.Set ("Capacitance", DoubleValue (capacitance/1000));
   capacitorHelper.Set ("CapacitorLowVoltageThreshold", DoubleValue (0.545454)); // 1.8 V
   capacitorHelper.Set ("CapacitorHighVoltageThreshold", DoubleValue (0.9090)); // 3 V
   capacitorHelper.Set ("CapacitorMaxSupplyVoltageV", DoubleValue (3.3));
@@ -577,9 +577,9 @@ int main (int argc, char *argv[])
   std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
                                                                       Seconds(simTime),
                                                                       0);
-  std::cout << std::to_string (timeStatistics[0]) << " "
-            << std::to_string (timeStatistics[1]) << " " 
-            << std::to_string (timeStatistics[2]) << " " << std::endl;
+  // std::cout << std::to_string (timeStatistics[0]) << " "
+  //           << std::to_string (timeStatistics[1]) << " " 
+  //           << std::to_string (timeStatistics[2]) << " " << std::endl;
 
   // Avoid non-existent files
   NS_LOG_DEBUG ("Create file if not done yet: " << stateChangeCallbackFirstCall);
