@@ -411,10 +411,16 @@ protected:
    */
   std::list<Ptr<MacCommand> > m_macCommandList;
 
-  /* Structure containing the retransmission parameters
+  /** Structure containing the retransmission parameters
    * for this device.
    */
   struct LoraRetxParameters m_retxParams;
+
+  /**
+   * Transmit packet at the MAC layer only if the device will not deplete energy
+   * during the tranmsission operation.
+   */
+  bool m_macTxIfEnergyOk;
 
   /////////////////
   //  Callbacks  //

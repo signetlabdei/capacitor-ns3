@@ -283,6 +283,8 @@ int main (int argc, char *argv[])
 
   // Set SF
   Config::SetDefault ("ns3::EndDeviceLorawanMac::DataRate", UintegerValue (dr));
+  // Set MAC behavior
+  Config::SetDefault ("ns3::EndDeviceLorawanMac::MacTxIfEnergyOk", BooleanValue (false));
 
   // Select harvester and input file
   bool enableVariableHarvester; 

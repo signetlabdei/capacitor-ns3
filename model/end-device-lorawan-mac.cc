@@ -59,6 +59,12 @@ EndDeviceLorawanMac::GetTypeId (void)
               "DRControl", "Whether to request the NS to control this device's Data Rate",
               BooleanValue (), MakeBooleanAccessor (&EndDeviceLorawanMac::m_controlDataRate),
               MakeBooleanChecker ())
+          .AddAttribute ("MacTxIfEnergyOk",
+                         "Whether transmit a packet at the MAC layer only if this will not deplete "
+                         "device's energy",
+                         BooleanValue (),
+                         MakeBooleanAccessor (&EndDeviceLorawanMac::m_macTxIfEnergyOk),
+                         MakeBooleanChecker ())
           .AddTraceSource ("TxPower", "Transmission power currently employed by this end device",
                            MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_txPower),
                            "ns3::TracedValueCallback::Double")
@@ -92,10 +98,11 @@ EndDeviceLorawanMac::GetTypeId (void)
                          MakeEnumAccessor (&EndDeviceLorawanMac::m_mType),
                          MakeEnumChecker (LorawanMacHeader::UNCONFIRMED_DATA_UP, "Unconfirmed",
                                           LorawanMacHeader::CONFIRMED_DATA_UP, "Confirmed"))
-          .AddTraceSource ("EnoughEnergyToTx",
-                           "Trace source indicating if there is enough energy to transmit the current packet",
-                           MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_enoughEnergyForTx),
-                           "ns3::Packet::TracedCallback")
+          .AddTraceSource (
+              "EnoughEnergyToTx",
+              "Trace source indicating if there is enough energy to transmit the current packet",
+              MakeTraceSourceAccessor (&EndDeviceLorawanMac::m_enoughEnergyForTx),
+              "ns3::Packet::TracedCallback")
           .AddConstructor<EndDeviceLorawanMac> ();
   return tid;
 }
@@ -234,104 +241,80 @@ EndDeviceLorawanMac::DoSend (Ptr<Packet> packet)
       ApplyNecessaryOptions (macHdr);
       packet->AddHeader (macHdr);
 
+      // Transmit MAC packet only if the energy level allows it
       // Check energy conditions
-      Ptr<EnergySourceContainer> nodeEnergySourceContainer =
-          m_device->GetNode ()->GetObject<EnergySourceContainer> ();
-      if (!(nodeEnergySourceContainer == 0))
+      if (m_macTxIfEnergyOk)
         {
-
-          // Predict energy consumption to decide if we can transmit
-          // Craft LoraTxParameters object
-          // LoraTxParameters params;
-          // params.sf = GetSfFromDataRate (m_dataRate);
-          // params.headerDisabled = m_headerDisabled;
-          // params.codingRate = m_codingRate;
-          // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
-          // params.nPreamble = m_nPreambleSymbols;
-          // params.crcEnabled = 1;
-          // params.lowDataRateOptimizationEnabled = 0;
-
-          // FOR MODEL COMPARISON Modify to compare with the model
-          LoraTxParameters params;
-          params.sf = GetSfFromDataRate (m_dataRate);
-          params.headerDisabled = 1;
-          params.codingRate = 1;
-          params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
-          params.nPreamble = 8;
-          params.crcEnabled = 1;
-          params.lowDataRateOptimizationEnabled = 0;
-
-          Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
-          Time duration = m_phy->GetOnAirTime (packet, params);
-
-          Ptr<LoraRadioEnergyModel> loraradioemodel =
-            nodeEnergySourceContainer->
-            Get(0)-> FindDeviceEnergyModels ("ns3::LoraRadioEnergyModel").Get (0)
-                  ->GetObject<LoraRadioEnergyModel> ();
-
-          // // Soluzione 1 - Using VOLTAGE
-
-          Ptr<CapacitorEnergySource> capacitor =
-            nodeEnergySourceContainer -> Get(0) ->GetObject<CapacitorEnergySource> ();
-          // If capacitor energy source
-          if (!(capacitor == 0))
+          Ptr<EnergySourceContainer> nodeEnergySourceContainer =
+              m_device->GetNode ()->GetObject<EnergySourceContainer> ();
+          if (!(nodeEnergySourceContainer == 0))
             {
-              double actualVoltage = capacitor->GetActualVoltage ();
-              double predictedVoltage =
-                capacitor->PredictVoltageForLorawanState (EndDeviceLoraPhy::TX, actualVoltage, duration);
-              double maxVoltage = capacitor->GetSupplyVoltage ();
-              DoubleValue lowThreshold;
-              capacitor->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
-              NS_LOG_DEBUG ("actual V, " << actualVoltage << " predicted V, " << predictedVoltage
-                                         << " th " << lowThreshold.Get () << ", Vmax "
-                                         << maxVoltage);
-              if (predictedVoltage < lowThreshold.Get () * maxVoltage)
+
+              // Predict energy consumption to decide if we can transmit
+              // Craft LoraTxParameters object
+              LoraTxParameters params;
+              params.sf = GetSfFromDataRate (m_dataRate);
+              params.headerDisabled = m_headerDisabled;
+              params.codingRate = m_codingRate;
+              params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+              params.nPreamble = m_nPreambleSymbols;
+              params.crcEnabled = 1;
+              params.lowDataRateOptimizationEnabled = 0;
+
+              // FOR MODEL COMPARISON Modify to compare with the model
+              // LoraTxParameters params;
+              // params.sf = GetSfFromDataRate (m_dataRate);
+              // params.headerDisabled = 1;
+              // params.codingRate = 1;
+              // params.bandwidthHz = GetBandwidthFromDataRate (m_dataRate);
+              // params.nPreamble = 8;
+              // params.crcEnabled = 1;
+              // params.lowDataRateOptimizationEnabled = 0;
+
+              Ptr<LogicalLoraChannel> txChannel = GetChannelForTx ();
+              Time duration = m_phy->GetOnAirTime (packet, params);
+
+              Ptr<LoraRadioEnergyModel> loraradioemodel =
+                  nodeEnergySourceContainer->Get (0)
+                      ->FindDeviceEnergyModels ("ns3::LoraRadioEnergyModel")
+                      .Get (0)
+                      ->GetObject<LoraRadioEnergyModel> ();
+
+              Ptr<CapacitorEnergySource> capacitor =
+                  nodeEnergySourceContainer->Get (0)->GetObject<CapacitorEnergySource> ();
+              // If capacitor energy source
+              if (!(capacitor == 0))
                 {
-                  NS_LOG_DEBUG ("Voltage is not enough!! We can not tx!");
-                  m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (),
-                                       false);
-                  // TODO? same check fr RXwind?
-                  return;
+                  double actualVoltage = capacitor->GetActualVoltage ();
+                  double predictedVoltage = capacitor->PredictVoltageForLorawanState (
+                      EndDeviceLoraPhy::TX, actualVoltage, duration);
+                  double maxVoltage = capacitor->GetSupplyVoltage ();
+                  DoubleValue lowThreshold;
+                  capacitor->GetAttribute ("CapacitorLowVoltageThreshold", lowThreshold);
+                  NS_LOG_DEBUG ("actual V, " << actualVoltage << " predicted V, "
+                                             << predictedVoltage << " th " << lowThreshold.Get ()
+                                             << ", Vmax " << maxVoltage);
+                  if (predictedVoltage < lowThreshold.Get () * maxVoltage)
+                    {
+                      NS_LOG_DEBUG ("Voltage is not enough!! We can not tx!");
+                      m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet,
+                                           Simulator::Now (), false);
+                      return;
+                    }
+                  else
+                    {
+                      // Remaining energy is enough. With the transmission we could fall under the battery threshold
+                      m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet,
+                                           Simulator::Now (), true);
+                    }
                 }
               else
                 {
-                  // Remaining energy is enough. With the transmission we could fall under the battery threshold
-                  m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (),
-                                       true);
+                  NS_LOG_DEBUG ("Capacitor energy source not found: no check on the state of "
+                                "energy/voltage.");
                 }
-            }
-          else
-            {
-              NS_LOG_DEBUG (
-                  "Capacitor energy source not found: no check on the state of energy/voltage.");
-            }
-        } // end check on energy
-
-      // // Soluzione 2 - Using ENERGY
-      // double predictedEnergyConsumption =
-      //     loraradioemodel->ComputeLoraEnergyConsumption (EndDeviceLoraPhy::TX, duration);
-      // NS_LOG_DEBUG ("Predicted energy consumption " << predictedEnergyConsumption);
-
-      // double remainingEnergy = nodeEnergySource->GetRemainingEnergy ();
-      // NS_LOG_DEBUG ("Remaining energy is " << remainingEnergy);
-      // // If BasicEnergySource
-      // double initialEnergy = nodeEnergySource->GetInitialEnergy ();
-      // DoubleValue lowThreshold;
-      // // nodeEnergySource->GetAttribute ("BasicEnergyLowBatteryThreshold", lowThreshold);
-
-      // if (remainingEnergy - predictedEnergyConsumption < (lowThreshold.Get () * initialEnergy))
-      //   {
-      //     NS_LOG_DEBUG ("Energy is not enough!! We can not tx!");
-      //     m_enoughEnergyForTx (m_device->GetNode()->GetId(), packet, Simulator::Now(), false);
-      //     // TODO? same check fr RXwind?
-      //     return;
-      //   }
-      // else
-      //   {
-      //     // Remaining energy is enough. With the transmission we could fall under the battery threshold
-      //     m_enoughEnergyForTx (m_device->GetNode ()->GetId (), packet, Simulator::Now (), true);
-      //   }
-
+            } // end check on energy
+        }
 
       // Reset MAC command list
       m_macCommandList.clear ();
