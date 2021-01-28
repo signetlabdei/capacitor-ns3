@@ -27,11 +27,14 @@
 #include "ns3/log.h"
 #include "ns3/assert.h"
 #include "ns3/double.h"
+#include "ns3/object-base.h"
 #include "ns3/packet.h"
 #include "ns3/string.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/pointer.h"
 #include "ns3/simulator.h"
 #include "src/core/model/string.h"
+#include <bits/stdint-intn.h>
 #include <cmath>
 #include <fstream>
 #include <math.h>
@@ -55,12 +58,11 @@ CapacitorEnergySource::GetTypeId (void)
                          DoubleValue (0.01), // 10 mF
                          MakeDoubleAccessor (&CapacitorEnergySource::m_capacitance),
                          MakeDoubleChecker<double> ())
-          .AddAttribute ("CapacitorEnergySourceInitialVoltageV",
-                         "Initial voltage of the capacitor.",
-                         DoubleValue (0), // in Volt
-                         MakeDoubleAccessor (&CapacitorEnergySource::SetInitialVoltage,
-                                             &CapacitorEnergySource::GetInitialVoltage),
-                         MakeDoubleChecker<double> ())
+          .AddAttribute ("RandomInitialVoltage",
+                         "Random variable from which taking the initial voltage of the capacitor",
+                         StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=0.0]"),
+                         MakePointerAccessor (&CapacitorEnergySource::m_initialVoltageRV),
+                         MakePointerChecker<RandomVariableStream> ())
           .AddAttribute ("CapacitorMaxSupplyVoltageV",
                          "Max Supply voltage for capacitor energy source.",
                          DoubleValue (3.3), // in Volts
@@ -85,8 +87,7 @@ CapacitorEnergySource::GetTypeId (void)
                                            &CapacitorEnergySource::GetUpdateInterval),
                          MakeTimeChecker ())
           .AddAttribute ("FilenameVoltageTracking",
-                         "Name of the output file where to save voltage values",
-                         StringValue (),
+                         "Name of the output file where to save voltage values", StringValue (),
                          MakeStringAccessor (&CapacitorEnergySource::m_filenameVoltageTracking),
                          MakeStringChecker ())
           .AddTraceSource ("RemainingEnergy", "Remaining energy at CapacitorEnergySource.",
@@ -101,8 +102,10 @@ CapacitorEnergySource::GetTypeId (void)
 CapacitorEnergySource::CapacitorEnergySource ()
 {
   NS_LOG_FUNCTION (this);
+  ObjectBase::ConstructSelf(AttributeConstructionList ());
   m_lastUpdateTime = Seconds (0.0);
   m_depleted = false;
+  SetInitialVoltage();
 }
 
 CapacitorEnergySource::~CapacitorEnergySource ()
@@ -110,49 +113,33 @@ CapacitorEnergySource::~CapacitorEnergySource ()
   NS_LOG_FUNCTION (this);
 }
 
-void
-CapacitorEnergySource::SetInitialVoltage (double initialVoltageV)
+TypeId
+CapacitorEnergySource::GetInstanceTypeId (void) const
 {
-  NS_LOG_FUNCTION (this << initialVoltageV);
-  NS_ASSERT (initialVoltageV >= 0);
+  return GetTypeId ();
+}
 
-  if (m_initialVoltageV> m_supplyVoltageV)
-    {
-      m_initialVoltageV= m_supplyVoltageV;
-    }
-  else
-    {
-      m_initialVoltageV = initialVoltageV;
-    }
-
-  m_actualVoltageV = m_initialVoltageV;
-  double initialEnergy = m_capacitance*pow(m_initialVoltageV, 2)/2;
-  m_remainingEnergyJ = initialEnergy;
-  NS_LOG_DEBUG ("Set initial voltage = " << m_initialVoltageV
-                << " V, remaining energy = " << initialEnergy);
+int64_t
+CapacitorEnergySource::AssignStreams(int64_t stream)
+{
+  NS_LOG_FUNCTION (this);
+  m_initialVoltageRV -> SetStream(stream);
+  return 1;
 }
 
 void
-CapacitorEnergySource::SetInitialEnergy (double initialEnergyJ)
+CapacitorEnergySource::SetInitialVoltage ()
 {
-  NS_LOG_FUNCTION (this << initialEnergyJ);
-  NS_ASSERT (initialEnergyJ >= 0);
-  double voltage = sqrt (2 * initialEnergyJ / m_capacitance);
-  if (voltage > m_supplyVoltageV)
-    {
-      m_initialVoltageV = m_supplyVoltageV;
-      m_remainingEnergyJ = m_capacitance* pow (m_initialVoltageV, 2) / 2;
-    }
-  else
-    {
-      m_remainingEnergyJ = initialEnergyJ;
-      m_initialVoltageV = voltage;
-    }
-  // m_remainingEnergyJ = initialEnergyJ;
-  // m_initialVoltageV = voltage;
-  m_actualVoltageV = m_initialVoltageV;
-  NS_LOG_DEBUG ("Set initial voltage = " << m_initialVoltageV << " V, remaining energy = "
-                                         << m_remainingEnergyJ << " J");
+  NS_LOG_FUNCTION (this);
+
+  m_actualVoltageV = m_initialVoltageRV->GetValue ();
+  NS_LOG_WARN ("Initial voltage: " << m_actualVoltageV << " V");
+  NS_ASSERT(m_actualVoltageV < m_supplyVoltageV);
+  m_initialVoltageV = m_actualVoltageV;
+  double initialEnergy = m_capacitance*pow(m_actualVoltageV, 2)/2;
+  m_remainingEnergyJ = initialEnergy;
+  NS_LOG_DEBUG ("Set initial voltage = " << m_actualVoltageV
+                << " V, remaining energy = " << initialEnergy);
 }
 
 void
