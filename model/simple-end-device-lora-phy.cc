@@ -65,6 +65,7 @@ SimpleEndDeviceLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
   if (m_state != STANDBY && m_state != SLEEP)
     {
       NS_LOG_INFO ("Cannot send because device is currently not in STANDBY or SLEEP mode");
+      m_sendingNotPossible (packet, m_device->GetNode ()->GetId ());
       return;
     }
 

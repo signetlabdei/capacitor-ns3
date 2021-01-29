@@ -212,7 +212,8 @@ namespace ns3 {
             }
           else if (newEnergy >= m_energyThreshold)
             {
-              NS_LOG_DEBUG ("Enough Energy to send a packet");
+              NS_LOG_WARN ("Enough Energy to send a packet " << newEnergy
+                           << " threshold: " << m_energyThreshold );
               SendPacket ();
               m_firstSending = 0;
             }
@@ -223,15 +224,26 @@ namespace ns3 {
         }
       else
         {
-          NS_LOG_DEBUG ("Enough Energy to send a packet, but too frequent");
+          // NS_LOG_DEBUG ("Enough Energy to send a packet, but too frequent");
         }
     }
 
     void
     EnergyAwareSender::PhyStartedSendingCallback (Ptr<Packet const> packet, uint32_t id)
     {
+      // The PHY has started sending the packet, so I do not have an APP packet
+      // "queued" anymore
       NS_LOG_FUNCTION (packet << id);
       m_tryingToSend = false;
     }
+
+    void
+    EnergyAwareSender::PhySendingNotPossibleCallback (Ptr<Packet const> packet, uint32_t id)
+    {
+      // The PHY could not sending the packet, which is dropped
+      NS_LOG_FUNCTION (packet << id);
+      m_tryingToSend = false;
+    }
+
   }
 }

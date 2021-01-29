@@ -93,7 +93,11 @@ EnergyAwareSenderHelper::InstallPriv (Ptr<Node> node) const
   app->SetNode (node);
   node->AddApplication (app);
 
-  node->GetDevice(0)->GetObject<LoraNetDevice> ()->GetPhy()->TraceConnectWithoutContext("StartSending", MakeCallback(&EnergyAwareSender::PhyStartedSendingCallback, app));
+  node->GetDevice(0)->GetObject<LoraNetDevice> ()->GetPhy()->TraceConnectWithoutContext("StartSending",
+                                                                                        MakeCallback(&EnergyAwareSender::PhyStartedSendingCallback, app));
+  node->GetDevice (0)->GetObject<LoraNetDevice> ()->GetPhy ()->TraceConnectWithoutContext (
+      "SendingNotPossible",
+      MakeCallback (&EnergyAwareSender::PhySendingNotPossibleCallback, app));
 
   return app;
 }

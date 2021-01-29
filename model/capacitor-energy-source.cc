@@ -231,31 +231,33 @@ void
 CapacitorEnergySource::UpdateEnergySource (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("CapacitorEnergySource: Updating remaining voltage.");
+  NS_LOG_DEBUG ("CapacitorEnergySource: Updating remaining voltage. Depleted? " << m_depleted);
 
     double actualVoltage = m_actualVoltageV;
     UpdateVoltage ();
 
     m_lastUpdateTime = Simulator::Now ();
 
-    double eps = 1e-6;
-    // NS_LOG_DEBUG ("Vmin = " << m_lowVoltageTh * m_supplyVoltageV << "isdepleted? "
-    //                         << (m_actualVoltageV <=m_lowVoltageTh * m_supplyVoltageV + eps));
-    if (!m_depleted && m_actualVoltageV <= m_lowVoltageTh * m_supplyVoltageV + eps)
-      {
-        NS_LOG_DEBUG("Energy depleted");
-        m_depleted = true;
-        HandleEnergyDrainedEvent ();
-      }
-    else if (m_depleted && m_actualVoltageV > m_highVoltageTh * m_supplyVoltageV)
-      {
-        m_depleted = false;
-        HandleEnergyRechargedEvent ();
-      }
-    else if (m_actualVoltageV != actualVoltage)
-      {
-        NotifyEnergyChanged ();
-      }
+    double eps = 1e-9;
+    NS_LOG_DEBUG ("Vmin = " << m_lowVoltageTh * m_supplyVoltageV << " actualV "
+                  << (m_actualVoltageV) << " is depleted?" << m_depleted );
+      if (!m_depleted && m_actualVoltageV <= m_lowVoltageTh * m_supplyVoltageV + eps)
+        {
+          NS_LOG_DEBUG ("Energy depleted");
+          m_depleted = true;
+          HandleEnergyDrainedEvent ();
+        }
+      else if (m_depleted && m_actualVoltageV > m_highVoltageTh * m_supplyVoltageV)
+        {
+          NS_LOG_DEBUG ("Energy recharged");
+          m_depleted = false;
+          HandleEnergyRechargedEvent ();
+        }
+      else if (m_actualVoltageV != actualVoltage)
+        {
+          NS_LOG_DEBUG ("Energy changed ");
+          NotifyEnergyChanged ();
+        }
 
     if (m_voltageUpdateEvent.IsExpired ())
       {

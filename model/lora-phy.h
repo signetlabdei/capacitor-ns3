@@ -274,6 +274,11 @@ protected:
    */
   TracedCallback<Ptr<const Packet>, uint32_t> m_startSending;
 
+  /**
+   * The trace source fired when a packet can not be sent.
+   */
+  TracedCallback<Ptr<const Packet>, uint32_t> m_sendingNotPossible;
+
   typedef void (* EmptyCallback) (void);
   // TracedCallback<> m_emptyCallback;
 
