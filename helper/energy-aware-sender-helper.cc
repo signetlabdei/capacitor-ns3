@@ -74,7 +74,7 @@ EnergyAwareSenderHelper::Install (NodeContainer c) const
 Ptr<Application>
 EnergyAwareSenderHelper::InstallPriv (Ptr<Node> node) const
 {
-  NS_LOG_FUNCTION (this << node);
+  NS_LOG_FUNCTION (this << node-> GetId());
 
   Ptr<EnergyAwareSender> app = m_factory.Create<EnergyAwareSender> ();
 

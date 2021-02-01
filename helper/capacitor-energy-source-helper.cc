@@ -21,8 +21,10 @@
 
 #include "capacitor-energy-source-helper.h"
 #include "ns3/energy-source.h"
+#include "ns3/log.h"
 
 namespace ns3 {
+NS_LOG_COMPONENT_DEFINE ("CapacitorEnergySourceHelper");
 
 CapacitorEnergySourceHelper::CapacitorEnergySourceHelper ()
 {
@@ -43,6 +45,7 @@ Ptr<EnergySource>
 CapacitorEnergySourceHelper::DoInstall (Ptr<Node> node) const
 {
   NS_ASSERT (node != NULL);
+  NS_LOG_DEBUG("Installing capacitor on node " << node->GetId());
   Ptr<EnergySource> source = m_capacitorEnergySource.Create<EnergySource> ();
   NS_ASSERT (source != NULL);
   source->SetNode (node);
