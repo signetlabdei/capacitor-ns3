@@ -92,10 +92,11 @@ private:
 private:
   
   double m_energyThreshold;
+  Time m_initialDelay;
   Time m_interval;
   Time m_sendTime;
   bool m_firstSending;
-    bool m_tryingToSend;
+  bool m_tryingToSend;
 
 
   /**

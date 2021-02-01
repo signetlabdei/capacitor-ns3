@@ -22,9 +22,13 @@
 #include "ns3/assert.h"
 #include "ns3/callback.h"
 #include "ns3/energy-aware-sender.h"
+#include "ns3/log-macros-enabled.h"
+#include "ns3/object.h"
 #include "ns3/pointer.h"
 #include "ns3/log.h"
 #include "ns3/double.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/simulator.h"
 #include "ns3/string.h"
 #include "ns3/lora-net-device.h"
 #include "src/lorawan/model/lora-radio-energy-model.h"
@@ -99,6 +103,12 @@ namespace ns3 {
     {
       NS_LOG_FUNCTION (this << interval);
       m_interval = interval;
+
+      // Add an initial random delay to de-synchronize applications
+      Ptr<UniformRandomVariable> urv =
+          CreateObject<UniformRandomVariable> ();
+      m_initialDelay = Seconds (urv->GetValue (0, m_interval.GetSeconds ()));
+      NS_LOG_DEBUG("Set initial delay: " << m_initialDelay.GetSeconds());
     }
 
     Time 
@@ -203,8 +213,13 @@ namespace ns3 {
     void
     EnergyAwareSender::EnergyAwareSendPacketCallback (double newEnergy)
     {
-      // Send packet only if a time has passed
-      if (m_firstSending == 1 || (Simulator::Now () - m_sendTime > m_interval))
+      // NS_LOG_FUNCTION (newEnergy);
+
+      // Send packet only if a time has passed:
+      // - 1st packet and initial delay
+      // - not 1st packet, at least m_interval has passed
+      if (((m_firstSending == 1) && !(Simulator::Now () < m_initialDelay)) ||
+          (Simulator::Now () - m_sendTime > m_interval))
         {
           if (m_tryingToSend)
             {
