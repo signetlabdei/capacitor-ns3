@@ -187,6 +187,16 @@ public:
                        Ptr<LoraInterferenceHelper::Event> event2);
 
   /**
+   * Modify the duration of an event
+   */
+  void ModifyEvent (Ptr<Packet> packet, Time realDuration);
+
+  /**
+   * Return the event associated to a packet
+   */
+  Ptr<LoraInterferenceHelper::Event> GetEvent (Ptr<Packet> packet);
+
+  /**
    * Delete all events in the LoraInterferenceHelper.
    */
   void ClearAllEvents (void);

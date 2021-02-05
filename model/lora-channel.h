@@ -153,6 +153,11 @@ public:
   double GetRxPower (double txPowerDbm, Ptr<MobilityModel> senderMobility,
                      Ptr<MobilityModel> receiverMobility) const;
 
+  /**
+   * Modify the list of the transmission events
+   */
+  void InterruptTx (Ptr<LoraPhy> sender, Ptr<Packet> packet, Time realDuration);
+
 private:
   /**
     * Private method that is scheduled by LoraChannel's Send method to happen

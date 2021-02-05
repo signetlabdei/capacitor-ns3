@@ -55,6 +55,8 @@ public:
   virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
                      double frequencyMHz, double txPowerDbm);
 
+  virtual void InterruptTx (void) override;
+  virtual void InterruptRx (Ptr<Packet> packet, Time realTime) override;
 private:
 };
 

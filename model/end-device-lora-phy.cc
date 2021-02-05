@@ -257,6 +257,11 @@ EndDeviceLoraPhy::SwitchToOff (void)
       return true;
     }
 
+  if (m_state == TX)
+    {
+        InterruptTx();
+    }
+
   m_state = OFF;
 
   // Notify listeners of the state change
@@ -385,6 +390,7 @@ EndDeviceLoraPhy::UnregisterListener (EndDeviceLoraPhyListener *listener)
         NS_LOG_DEBUG ("Capacitor source not found!");
       }
   }
+
 
 } // lorawan
 } // ns3

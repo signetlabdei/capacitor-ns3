@@ -184,16 +184,15 @@ public:
   virtual ~EndDeviceLoraPhy ();
 
   // Implementation of LoraPhy's pure virtual functions
-  virtual void StartReceive (Ptr<Packet> packet, double rxPowerDbm,
-                             uint8_t sf, Time duration, double frequencyMHz) = 0;
+  virtual void StartReceive (Ptr<Packet> packet, double rxPowerDbm, uint8_t sf, Time duration,
+                             double frequencyMHz) = 0;
 
   // Implementation of LoraPhy's pure virtual functions
-  virtual void EndReceive (Ptr<Packet> packet,
-                           Ptr<LoraInterferenceHelper::Event> event) = 0;
+  virtual void EndReceive (Ptr<Packet> packet, Ptr<LoraInterferenceHelper::Event> event) = 0;
 
   // Implementation of LoraPhy's pure virtual functions
-  virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
-                     double frequencyMHz, double txPowerDbm) = 0;
+  virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams, double frequencyMHz,
+                     double txPowerDbm) = 0;
 
   // Implementation of LoraPhy's pure virtual functions
   virtual bool IsOnFrequency (double frequencyMHz);
@@ -260,13 +259,13 @@ public:
    */
   bool SwitchToTurnOn (void);
 
-      /**
+  /**
    * Add the input listener to the list of objects to be notified of PHY-level
    * events.
    *
    * \param listener the new listener
    */
-      void RegisterListener (EndDeviceLoraPhyListener *listener);
+  void RegisterListener (EndDeviceLoraPhyListener *listener);
 
   /**
    * Remove the input listener from the list of objects to be notified of
@@ -284,11 +283,17 @@ public:
    */
   bool IsEnergyStateOk (void);
 
-    protected :
-      /**
+  // // Implementation of LoraPhy's pure virtual function
+  // virtual void InterruptTx (void);
+
+  // // Implementation of LoraPhy's pure virtual function
+  // virtual void InterruptRx (Ptr<Packet> packet, Time realDuration);
+
+protected:
+  /**
    * Switch to the RX state
    */
-      bool SwitchToRx ();
+  bool SwitchToRx ();
 
   /**
    * Switch to the TX state
@@ -300,6 +305,16 @@ public:
    * energy would be depleted
    */
   void SetCheckForEnergyDepletion (void);
+
+  // /**
+  //  * Interrupt an ongoing transmission
+  //  */
+  // virtual void InterruptTx (void);
+
+  // /**
+  //  * Interrupt an ongoing reception
+  //  */
+  // virtual void InterruptRx (Ptr<Packet> packet, Time realDuration);
 
   /**
    * Trace source for when a packet is lost because it was using a SF different from
@@ -334,7 +349,7 @@ public:
   Listeners m_listeners; //!< PHY listeners
 };
 
-} /* namespace ns3 */
+} // namespace lorawan
 
-}
+} // namespace ns3
 #endif /* END_DEVICE_LORA_PHY_H */

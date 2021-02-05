@@ -62,6 +62,9 @@ public:
   virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
                      double frequencyMHz, double txPowerDbm) = 0;
 
+  // virtual void InterruptTx ();
+  // virtual void InterruptRx (Ptr<Packet> packet, Time realDuration);
+
   virtual void TxFinished (Ptr<Packet> packet);
 
   bool IsTransmitting (void);

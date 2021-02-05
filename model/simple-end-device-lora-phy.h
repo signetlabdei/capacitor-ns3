@@ -21,6 +21,7 @@
 #ifndef SIMPLE_END_DEVICE_LORA_PHY_H
 #define SIMPLE_END_DEVICE_LORA_PHY_H
 
+#include "ns3/event-id.h"
 #include "ns3/object.h"
 #include "ns3/traced-value.h"
 #include "ns3/net-device.h"
@@ -59,7 +60,17 @@ public:
   virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
                      double frequencyMHz, double txPowerDbm);
 
+  // Implementation of LoraPhy's pure virtual function
+  virtual void InterruptTx (void) override;
+
+  // Implementation of LoraPhy's pure virtual function
+  virtual void InterruptRx (Ptr<Packet> packet, Time realDuration) override;
+
 private:
+  Ptr<Packet> m_sendingPacket;
+  Time m_sendingTime;
+  EventId m_endReceiveEventId;
+  EventId m_switchToStandbyEventId;
 };
 
 } /* namespace ns3 */

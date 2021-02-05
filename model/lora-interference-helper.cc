@@ -19,8 +19,10 @@
  */
 
 #include "ns3/lora-interference-helper.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/enum.h"
+#include <bits/stdint-uintn.h>
 #include <limits>
 
 namespace ns3 {
@@ -357,6 +359,46 @@ LoraInterferenceHelper::IsDestroyedByInterference (Ptr<LoraInterferenceHelper::E
   // Since the packet was not destroyed, we return 0.
   return uint8_t (0);
 }
+
+Ptr<LoraInterferenceHelper::Event>
+LoraInterferenceHelper::GetEvent (Ptr<Packet> packet)
+{
+  NS_LOG_FUNCTION (this << packet);
+
+  std::list<Ptr<LoraInterferenceHelper::Event>>::iterator it;
+  for (it = m_events.begin (); it != m_events.end (); ++it)
+    {
+      Ptr<LoraInterferenceHelper::Event> interferer = *it;
+      if (interferer->GetPacket () == packet)
+        {
+          return interferer;
+        }
+    }
+  NS_LOG_ERROR ("Packet to interrupt not found!");
+  return 0;
+}
+
+void
+LoraInterferenceHelper::ModifyEvent (Ptr<Packet> packet, Time realDuration)    
+{
+  NS_LOG_FUNCTION (this << packet << realDuration);
+
+  Ptr<LoraInterferenceHelper::Event> interferer = GetEvent (packet);
+  double rxPower = interferer->GetRxPowerdBm ();
+  uint8_t sf = interferer->GetSpreadingFactor ();
+  double frequencyMHz = interferer->GetFrequency ();
+  // Remove previously inserted value
+  m_events.remove (interferer);
+
+  // Add new element with correct duration
+  // Create an event based on the parameters
+  Ptr<LoraInterferenceHelper::Event> event =
+      Create<LoraInterferenceHelper::Event> (realDuration, rxPower, sf, packet, frequencyMHz);
+
+  // Add the event to the list
+  m_events.push_back (event);
+ }
+
 
 void
 LoraInterferenceHelper::ClearAllEvents (void)

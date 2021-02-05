@@ -152,6 +152,9 @@ public:
   virtual void Send (Ptr<Packet> packet, LoraTxParameters txParams,
                      double frequencyMHz, double txPowerDbm) = 0;
 
+  virtual void InterruptTx (void) = 0;
+  virtual void InterruptRx (Ptr<Packet> packet, Time realDuration) = 0;
+
   /**
    * Whether this device is transmitting or not.
    *

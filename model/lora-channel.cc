@@ -19,6 +19,7 @@
  */
 
 #include "ns3/lora-channel.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
 #include "ns3/pointer.h"
 #include "ns3/object-factory.h"
@@ -189,6 +190,23 @@ LoraChannel::Receive (uint32_t i, Ptr<Packet> packet,
   // Call the appropriate PHY instance to let it begin reception
   m_phyList[i]->StartReceive (packet, parameters.rxPowerDbm, parameters.sf,
                               parameters.duration, parameters.frequencyMHz);
+}
+
+void
+LoraChannel::InterruptTx (Ptr<LoraPhy> sender, Ptr<Packet> packet, Time realDuration)
+{
+  NS_LOG_FUNCTION (this << packet << realDuration);
+    
+  uint32_t j = 0;
+  std::vector<Ptr<LoraPhy>>::const_iterator i;
+  for (i = m_phyList.begin (); i != m_phyList.end (); i++, j++)
+    {
+      // Do not consider the sender (*i is the current PHY)
+      if (sender != (*i))
+        {
+          m_phyList[j]->InterruptRx (packet, realDuration);
+        }
+    }
 }
 
 double

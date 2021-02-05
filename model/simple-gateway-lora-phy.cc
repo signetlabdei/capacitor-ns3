@@ -19,6 +19,8 @@
  */
 
 #include "ns3/simple-gateway-lora-phy.h"
+#include "ns3/log-macros-enabled.h"
+#include "ns3/lora-interference-helper.h"
 #include "ns3/lora-tag.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
@@ -316,6 +318,38 @@ SimpleGatewayLoraPhy::EndReceive (Ptr<Packet> packet,
         }
     }
 }
+
+void
+SimpleGatewayLoraPhy::InterruptTx ()
+{
+}
+
+void
+SimpleGatewayLoraPhy::InterruptRx (Ptr<Packet> packet, Time realDuration)
+{
+  NS_LOG_FUNCTION (this << packet << realDuration);
+
+  // Extract previous event
+  Ptr<LoraInterferenceHelper::Event> event = m_interference.GetEvent(packet);
+
+  // Search for the demodulator that was locked on this event to free it.
+  std::list<Ptr<SimpleGatewayLoraPhy::ReceptionPath>>::iterator it;
+  for (it = m_receptionPaths.begin (); it != m_receptionPaths.end (); ++it)
+    {
+      Ptr<SimpleGatewayLoraPhy::ReceptionPath> currentPath = *it;
+      if (currentPath->GetEvent () == event)
+        {
+          NS_LOG_DEBUG("Found path locked on this packet");
+          // Cancel the reception of the packet and free the path
+          Simulator::Cancel (currentPath->GetEndReceive ());
+          currentPath->Free ();
+          m_occupiedReceptionPaths--;
+        }
+    }
+
+  m_interference.ModifyEvent (packet, realDuration);
+}
+
 
 }
 }

@@ -240,7 +240,7 @@ CapacitorEnergySource::UpdateEnergySource (void)
 
     double eps = 1e-9;
     NS_LOG_DEBUG ("Vmin = " << m_lowVoltageTh * m_supplyVoltageV << " actualV "
-                  << (m_actualVoltageV) << " is depleted?" << m_depleted );
+                  << (m_actualVoltageV) << " was depleted?" << m_depleted );
       if (!m_depleted && m_actualVoltageV <= m_lowVoltageTh * m_supplyVoltageV + eps)
         {
           NS_LOG_DEBUG ("Energy depleted");

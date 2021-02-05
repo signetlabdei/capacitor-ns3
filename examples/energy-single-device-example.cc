@@ -60,10 +60,10 @@ using namespace lorawan;
 NS_LOG_COMPONENT_DEFINE ("EnergySingleDeviceExample");
 
 // Inputs
-double simTime = 100;
-double appPeriod = 10;
+double simTime = 30;
+double appPeriod = 4;
 double capacitance = 6; // mF
-int packetSize = 10;
+int packetSize = 50;
 double eh = 0.001;
 uint8_t dr = 5;
 bool confirmed = false;
@@ -183,7 +183,8 @@ CheckEnoughEnergyCallback (uint32_t nodeId, Ptr<const Packet> packet,
 
 
 void
-OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::State status)
+OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus,
+                        EndDeviceLoraPhy::State status)
 {
   const char *c = filenameState.c_str ();
   std::ofstream outputFile;
@@ -202,6 +203,7 @@ OnEndDeviceStateChange (EndDeviceLoraPhy::State oldstatus, EndDeviceLoraPhy::Sta
       outputFile.open (c, std::ofstream::out | std::ofstream::app);
     }
 
+  NS_LOG_DEBUG ("Added current state");
   outputFile << Simulator::Now ().GetSeconds () << " " << status << std::endl;
 
   outputFile.close ();
@@ -241,21 +243,22 @@ int main (int argc, char *argv[])
 
   // Set up logging
   LogComponentEnable ("EnergySingleDeviceExample", LOG_LEVEL_ALL);
-  LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
+  // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
   // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+  // LogComponentEnable ("CapacitorEnergySourceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
   // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
   // LogComponentEnable ("BasicEnergySource", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraChannel", LOG_LEVEL_INFO);
-  // LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
-  // LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraChannel", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("EndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleEndDeviceLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("GatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("SimpleGatewayLoraPhy", LOG_LEVEL_ALL);
+  LogComponentEnable ("LoraInterferenceHelper", LOG_LEVEL_ALL);
   // LogComponentEnable ("LorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("EndDeviceLorawanMac", LOG_LEVEL_ALL);
   // LogComponentEnable ("ClassAEndDeviceLorawanMac", LOG_LEVEL_ALL);
@@ -276,6 +279,7 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_TIME);
   // Set SF
   Config::SetDefault ("ns3::EndDeviceLorawanMac::DataRate", UintegerValue (dr));
+  Config::SetDefault ("ns3::EndDeviceLorawanMac::MacTxIfEnergyOk", BooleanValue (false));
 
   // Select harvester and input file
   bool enableVariableHarvester; 
@@ -442,7 +446,9 @@ int main (int argc, char *argv[])
                 " RLoff " << RLoff <<
                 " ri " << ri <<
                 " R_eq_off " << Req_off);
-  capacitorHelper.Set ("CapacitorEnergySourceInitialVoltageV", DoubleValue (V0));
+  // V0 = 1.805;
+  std::string rv = "ns3::UniformRandomVariable[Min=" + std::to_string (V0) + "|Max=" + std::to_string (V0) + "]";
+  Config::SetDefault ("ns3::CapacitorEnergySource::RandomInitialVoltage", StringValue (rv));
   capacitorHelper.Set ("PeriodicVoltageUpdateInterval", TimeValue (MilliSeconds (500)));
   capacitorHelper.Set ("FilenameVoltageTracking",
                       StringValue(filenameRemainingVoltage));
@@ -574,9 +580,9 @@ int main (int argc, char *argv[])
     cpsr = tracker.CountMacPacketsGloballyCpsr (Seconds(0), Seconds(simTime));
   }
   std::cout << generatedPacketsAPP << " " << pdr << " " << cpsr << std::endl;
-  std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
-                                                                      Seconds(simTime),
-                                                                      0);
+  // std::vector<double> timeStatistics = tracker.TxTimeStatisticsPerEd (Seconds(0),
+                                                                      // Seconds(simTime),
+                                                                      // 0);
   // std::cout << std::to_string (timeStatistics[0]) << " "
   //           << std::to_string (timeStatistics[1]) << " " 
   //           << std::to_string (timeStatistics[2]) << " " << std::endl;

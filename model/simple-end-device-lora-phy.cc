@@ -19,6 +19,8 @@
  */
 
 #include <algorithm>
+#include "ns3/assert.h"
+#include "ns3/log-macros-enabled.h"
 #include "ns3/simple-end-device-lora-phy.h"
 #include "ns3/simulator.h"
 #include "ns3/lora-tag.h"
@@ -86,9 +88,14 @@ SimpleEndDeviceLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
   NS_LOG_INFO ("Sending the packet in the channel");
   m_channel->Send (this, packet, txPowerDbm, txParams, duration, frequencyMHz);
 
+  // Save information about this sending
+  m_sendingPacket = packet;
+  m_sendingTime = Simulator::Now();
+
   // Schedule the switch back to STANDBY mode.
   // For reference see SX1272 datasheet, section 4.1.6
-  Simulator::Schedule (duration, &EndDeviceLoraPhy::SwitchToStandby, this);
+  m_switchToStandbyEventId = Simulator::Schedule (duration,
+                                                  &EndDeviceLoraPhy::SwitchToStandby, this);
 
   // Schedule the txFinished callback, if it was set
   // The call is scheduled just after the switch to standby in case the upper
@@ -255,7 +262,7 @@ SimpleEndDeviceLoraPhy::StartReceive (Ptr<Packet> packet, double rxPowerDbm,
                 NS_LOG_INFO ("Scheduling reception of a packet. End in " << duration.GetSeconds ()
                                                                          << " seconds");
 
-                Simulator::Schedule (duration, &LoraPhy::EndReceive, this, packet, event);
+                m_endReceiveEventId = Simulator::Schedule (duration, &LoraPhy::EndReceive, this, packet, event);
 
                 // Fire the beginning of reception trace source
                 m_phyRxBeginTrace (packet);
@@ -348,5 +355,26 @@ SimpleEndDeviceLoraPhy::EndReceive (Ptr<Packet> packet,
 
     }
 }
+
+void
+SimpleEndDeviceLoraPhy::InterruptTx (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT (m_state == EndDeviceLoraPhy::TX);
+  Time realDuration = Simulator::Now() - m_sendingTime;
+  m_channel-> InterruptTx (this, m_sendingPacket, realDuration);
+  m_switchToStandbyEventId.Cancel();
 }
+
+void
+SimpleEndDeviceLoraPhy::InterruptRx (Ptr<Packet> packet, Time realDuration)    
+{
+  NS_LOG_DEBUG (this << packet << realDuration);
+
+  m_interference.ModifyEvent (packet, realDuration);
+  m_endReceiveEventId.Cancel();
 }
+
+} // namespace lorawan
+} // namespace ns3
