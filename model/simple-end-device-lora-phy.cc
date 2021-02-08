@@ -103,7 +103,7 @@ SimpleEndDeviceLoraPhy::Send (Ptr<Packet> packet, LoraTxParameters txParams,
   // STANDBY mode.
   if (!m_txFinishedCallback.IsNull ())
     {
-      Simulator::Schedule (duration + NanoSeconds (10),
+      m_txFinishedEventId = Simulator::Schedule (duration + NanoSeconds (10),
                            &SimpleEndDeviceLoraPhy::m_txFinishedCallback, this,
                            packet);
     }
@@ -365,6 +365,12 @@ SimpleEndDeviceLoraPhy::InterruptTx (void)
   Time realDuration = Simulator::Now() - m_sendingTime;
   m_channel-> InterruptTx (this, m_sendingPacket, realDuration);
   m_switchToStandbyEventId.Cancel();
+  m_txFinishedEventId.Cancel ();
+  // Fire the trace source for this event.
+  if (m_device)
+    {
+      m_interruptedTransmission (m_sendingPacket);
+    }
 }
 
 void

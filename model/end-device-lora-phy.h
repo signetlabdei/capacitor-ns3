@@ -329,6 +329,11 @@ protected:
    */
   TracedCallback<Ptr<const Packet>, uint32_t> m_wrongFrequency;
 
+  /**
+   * Tracesource for an interrupted PHY transmission
+   */
+  TracedCallback<Ptr<const Packet>> m_interruptedTransmission;
+
   TracedValue<State> m_state; //!< The state this PHY is currently in.
 
   // static const double sensitivity[6]; //!< The sensitivity vector of this device to different SFs

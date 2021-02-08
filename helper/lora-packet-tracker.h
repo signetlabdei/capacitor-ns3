@@ -48,6 +48,7 @@ struct PacketStatus
   uint32_t senderId;
   Time sendTime;
   std::map<int, enum PhyPacketOutcome> outcomes;
+  bool txSuccessful;
 };
 
 struct MacPacketStatus
@@ -71,7 +72,6 @@ typedef std::map<Ptr<Packet const>, MacPacketStatus> MacPacketData;
 typedef std::map<Ptr<Packet const>, PacketStatus> PhyPacketData;
 typedef std::map<Ptr<Packet const>, RetransmissionStatus> RetransmissionData;
 
-
 class LoraPacketTracker
 {
 public:
@@ -89,14 +89,15 @@ public:
   void NoMoreReceiversCallback (Ptr<Packet const> packet, uint32_t systemId);
   void UnderSensitivityCallback (Ptr<Packet const> packet, uint32_t systemId);
   void LostBecauseTxCallback (Ptr<Packet const> packet, uint32_t systemId);
+  void InterruptedTransmissionCallback (Ptr<Packet const> packet);
 
   /////////////////////////
   // MAC layer callbacks //
   /////////////////////////
   // Packet transmission at an EndDevice
   void MacTransmissionCallback (Ptr<Packet const> packet);
-  void RequiredTransmissionsCallback (uint8_t reqTx, bool success,
-                                      Time firstAttempt, Ptr<Packet> packet);
+  void RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt,
+                                      Ptr<Packet> packet);
   // Packet reception at the Gateway
   void MacGwReceptionCallback (Ptr<Packet const> packet);
 
@@ -110,30 +111,33 @@ public:
   //                            PhyPacketData packetTracker);
 
   /**
-   * Count packets to evaluate the performance at PHY level of a specific
-   * gateway.
+   * Count total packets received at the PHY sent of this ED, packets that have
+   * been successfullt transmitted at the PHY level and packets that have been
+   * interrupted
    */
-  std::vector<int> CountPhyPacketsPerGw (Time startTime, Time stopTime,
-                                         int systemId);
+  std::vector<int> CountPhyPacketsPerEd (Time startTime, Time stopTime, uint edId);
+
   /**
    * Count packets to evaluate the performance at PHY level of a specific
    * gateway.
    */
-  std::string PrintPhyPacketsPerGw (Time startTime, Time stopTime,
-                                    int systemId);
+  std::vector<int> CountPhyPacketsPerGw (Time startTime, Time stopTime, int systemId);
+  /**
+   * Count packets to evaluate the performance at PHY level of a specific
+   * gateway.
+   */
+  std::string PrintPhyPacketsPerGw (Time startTime, Time stopTime, int systemId);
   /**
    * Count packets to evaluate the performance at MAC level of a specific
    * gateway.
    */
-  std::string CountMacPacketsPerGw (Time startTime, Time stopTime,
-                                    int systemId);
+  std::string CountMacPacketsPerGw (Time startTime, Time stopTime, int systemId);
 
   /**
    * Count packets to evaluate the performance at MAC level of a specific
    * gateway.
    */
-  std::string PrintMacPacketsPerGw (Time startTime, Time stopTime,
-                                    int systemId);
+  std::string PrintMacPacketsPerGw (Time startTime, Time stopTime, int systemId);
 
   /**
    * Count the number of retransmissions that were needed to correctly deliver a
@@ -151,14 +155,13 @@ public:
   /**
    * Count MAC packets per ED
    */
-  std::vector<uint> CountMacPacketsPerEd (Time startTime, Time stopTime,
-                                          uint32_t edId);
+  std::vector<uint> CountMacPacketsPerEd (Time startTime, Time stopTime, uint32_t edId);
 
-      /**
+  /**
    * This returns a string containing the number of sent packets and the number
    * of packets that were received by at least one gateway.
    */
-      std::string CountMacPacketsGlobally (Time startTime, Time stopTime);
+  std::string CountMacPacketsGlobally (Time startTime, Time stopTime);
 
   /**
    * Count packets to evaluate the global performance at MAC level of the whole
@@ -183,6 +186,6 @@ private:
   MacPacketData m_macPacketTracker;
   RetransmissionData m_reTransmissionTracker;
 };
-}
-}
+} // namespace lorawan
+} // namespace ns3
 #endif

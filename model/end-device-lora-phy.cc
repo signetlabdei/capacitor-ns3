@@ -48,26 +48,30 @@ EndDeviceLoraPhyListener::~EndDeviceLoraPhyListener ()
 TypeId
 EndDeviceLoraPhy::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::EndDeviceLoraPhy")
-    .SetParent<LoraPhy> ()
-    .SetGroupName ("lorawan")
-    .AddTraceSource ("LostPacketBecauseWrongFrequency",
-                     "Trace source indicating a packet "
-                     "could not be correctly decoded because"
-                     "the ED was listening on a different frequency",
-                     MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_wrongFrequency),
-                     "ns3::Packet::TracedCallback")
-    .AddTraceSource ("LostPacketBecauseWrongSpreadingFactor",
-                     "Trace source indicating a packet "
-                     "could not be correctly decoded because"
-                     "the ED was listening for a different Spreading Factor",
-                     MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_wrongSf),
-                     "ns3::Packet::TracedCallback")
-    .AddTraceSource ("EndDeviceState",
-                     "The current state of the device",
-                     MakeTraceSourceAccessor
-                       (&EndDeviceLoraPhy::m_state),
-                     "ns3::TracedValueCallback::EndDeviceLoraPhy::State");
+  static TypeId tid =
+      TypeId ("ns3::EndDeviceLoraPhy")
+          .SetParent<LoraPhy> ()
+          .SetGroupName ("lorawan")
+          .AddTraceSource ("InterruptedTransmission",
+                           "Trace source indicating a packet "
+                           "transmission was interrupted",
+                           MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_interruptedTransmission),
+                           "ns3::Packet::TracedCallback")
+          .AddTraceSource ("LostPacketBecauseWrongFrequency",
+                           "Trace source indicating a packet "
+                           "could not be correctly decoded because"
+                           "the ED was listening on a different frequency",
+                           MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_wrongFrequency),
+                           "ns3::Packet::TracedCallback")
+          .AddTraceSource ("LostPacketBecauseWrongSpreadingFactor",
+                           "Trace source indicating a packet "
+                           "could not be correctly decoded because"
+                           "the ED was listening for a different Spreading Factor",
+                           MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_wrongSf),
+                           "ns3::Packet::TracedCallback")
+          .AddTraceSource ("EndDeviceState", "The current state of the device",
+                           MakeTraceSourceAccessor (&EndDeviceLoraPhy::m_state),
+                           "ns3::TracedValueCallback::EndDeviceLoraPhy::State");
   return tid;
 }
 

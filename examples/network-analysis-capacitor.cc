@@ -570,10 +570,13 @@ OnEndDeviceTx (std::string context, EndDeviceLoraPhy::State oldstatus,
     BasicEnergyHarvesterHelper harvesterHelper;
     harvesterHelper.Set ("PeriodicHarvestedPowerUpdateInterval", TimeValue (Seconds (10)));
     // // Constant harvesting rate
-    double minPowerDensity = eh; // 30e-3;
-    double maxPowerDensity = eh; // 0.30e-3;
-    std::string power = "ns3::UniformRandomVariable[Min=" + std::to_string (minPowerDensity) +
-                        "|Max=" + std::to_string (maxPowerDensity) + "]";
+    double meanPowerDensity = eh;
+    double variancePowerDensity = 0.08; 
+    std::string power = "ns3::NormalRandomVariable[Mean=" +
+      std::to_string (meanPowerDensity) +
+      "|Variance=" + std::to_string (variancePowerDensity) +
+      "|Bound=" + std::to_string(meanPowerDensity)+"]";
+    // std::string power = "ns3::UniformRandomVariable[Min=0|Max="+std::to_string(2*eh)+"]";
     harvesterHelper.Set ("HarvestablePower", StringValue (power));
 
     // // Variable energy harvesting
@@ -691,9 +694,25 @@ OnEndDeviceTx (std::string context, EndDeviceLoraPhy::State oldstatus,
     //     std::cout << std::to_string(v.at(0)) << " " << std::to_string(v.at(1)) << std::endl;
     //   }
 
+    std::vector<int> edsPhyPerf (3,0);
+    std::vector<int> edPhyPerf (3,0);
+    for (uint i = 0; i < nDevices; i++)
+      {
+        edPhyPerf = tracker.CountPhyPacketsPerEd (Seconds (0), Seconds (simTime),
+                                                  endDevices.Get (i)->GetId ());
+
+        edsPhyPerf.at (0) = edsPhyPerf.at (0) + edPhyPerf.at (0);
+        edsPhyPerf.at (1) = edsPhyPerf.at (1) + edPhyPerf.at (1);
+        edsPhyPerf.at (2) = edsPhyPerf.at (2) + edPhyPerf.at (2);
+      }
+
     std::cout << pdr << " " << cpsr << " ";
     std::cout << tracker.PrintPhyPacketsPerGw (Seconds (0), Seconds (simTime),
                                                gateways.Get (0)->GetId ())
+              << generatedPacketsAPP << " "
+              << std::to_string (edsPhyPerf.at (0)) << " "
+              << std::to_string (edsPhyPerf.at (1)) << " "
+              << std::to_string (edsPhyPerf.at (2))
               << std::endl;
 
     if (print && nDevices == 1)

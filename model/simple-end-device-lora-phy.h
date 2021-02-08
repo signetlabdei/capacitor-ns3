@@ -71,6 +71,7 @@ private:
   Time m_sendingTime;
   EventId m_endReceiveEventId;
   EventId m_switchToStandbyEventId;
+  EventId m_txFinishedEventId;
 };
 
 } /* namespace ns3 */

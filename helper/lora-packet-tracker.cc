@@ -64,20 +64,17 @@ LoraPacketTracker::MacTransmissionCallback (Ptr<Packet const> packet)
       status.senderId = Simulator::GetContext ();
       status.receivedTime = Time::Max ();
 
-      m_macPacketTracker.insert (std::pair<Ptr<Packet const>, MacPacketStatus>
-                                   (packet, status));
+      m_macPacketTracker.insert (std::pair<Ptr<Packet const>, MacPacketStatus> (packet, status));
     }
 }
 
 void
-LoraPacketTracker::RequiredTransmissionsCallback (uint8_t reqTx, bool success,
-                                                  Time firstAttempt,
+LoraPacketTracker::RequiredTransmissionsCallback (uint8_t reqTx, bool success, Time firstAttempt,
                                                   Ptr<Packet> packet)
 {
   NS_LOG_INFO ("Finished retransmission attempts for a packet");
-  NS_LOG_DEBUG ("Packet: " << packet << "ReqTx " << unsigned(reqTx) <<
-                ", succ: " << success << ", firstAttempt: " <<
-                firstAttempt.GetSeconds ());
+  NS_LOG_DEBUG ("Packet: " << packet << "ReqTx " << unsigned (reqTx) << ", succ: " << success
+                           << ", firstAttempt: " << firstAttempt.GetSeconds ());
 
   RetransmissionStatus entry;
   entry.firstAttempt = firstAttempt;
@@ -85,8 +82,7 @@ LoraPacketTracker::RequiredTransmissionsCallback (uint8_t reqTx, bool success,
   entry.reTxAttempts = reqTx;
   entry.successful = success;
 
-  m_reTransmissionTracker.insert (std::pair<Ptr<Packet>, RetransmissionStatus>
-                                    (packet, entry));
+  m_reTransmissionTracker.insert (std::pair<Ptr<Packet>, RetransmissionStatus> (packet, entry));
 }
 
 void
@@ -94,17 +90,15 @@ LoraPacketTracker::MacGwReceptionCallback (Ptr<Packet const> packet)
 {
   if (IsUplink (packet))
     {
-      NS_LOG_INFO ("A packet was successfully received" <<
-                   " at the MAC layer of gateway " <<
-                   Simulator::GetContext ());
+      NS_LOG_INFO ("A packet was successfully received"
+                   << " at the MAC layer of gateway " << Simulator::GetContext ());
 
       // Find the received packet in the m_macPacketTracker
       auto it = m_macPacketTracker.find (packet);
       if (it != m_macPacketTracker.end ())
         {
-          (*it).second.receptionTimes.insert (std::pair<int, Time>
-                                                (Simulator::GetContext (),
-                                                Simulator::Now ()));
+          (*it).second.receptionTimes.insert (
+              std::pair<int, Time> (Simulator::GetContext (), Simulator::Now ()));
         }
       else
         {
@@ -130,6 +124,7 @@ LoraPacketTracker::TransmissionCallback (Ptr<Packet const> packet, uint32_t edId
       status.packet = packet;
       status.sendTime = Simulator::Now ();
       status.senderId = edId;
+      status.txSuccessful = true;
 
       m_packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
     }
@@ -210,6 +205,18 @@ LoraPacketTracker::LostBecauseTxCallback (Ptr<Packet const> packet, uint32_t gwI
     }
 }
 
+void
+LoraPacketTracker::InterruptedTransmissionCallback (Ptr<Packet const> packet)
+{
+  if (IsUplink (packet))
+    {
+      NS_LOG_INFO ("PHY packet " << packet << " interrupted");
+
+      std::map<Ptr<Packet const>, PacketStatus>::iterator it = m_packetTracker.find (packet);
+      (*it).second.txSuccessful = false;
+    }
+}
+
 bool
 LoraPacketTracker::IsUplink (Ptr<Packet const> packet)
 {
@@ -225,9 +232,37 @@ LoraPacketTracker::IsUplink (Ptr<Packet const> packet)
 // Counting Functions //
 ////////////////////////
 
+// TODO Count interrupted packets
 std::vector<int>
-LoraPacketTracker::CountPhyPacketsPerGw (Time startTime, Time stopTime,
-                                         int gwId)
+LoraPacketTracker::CountPhyPacketsPerEd (Time startTime, Time stopTime, uint edId)
+{
+  std::vector<int> packetCounts (3, 0);
+
+  for (auto itPhy = m_packetTracker.begin (); itPhy != m_packetTracker.end (); ++itPhy)
+    {
+      if ((*itPhy).second.sendTime >= startTime && (*itPhy).second.sendTime <= stopTime)
+        {
+          // NS_LOG_DEBUG ("Dealing with packet " << (*itPhy).second.packet);
+          if ((*itPhy).second.senderId == edId)
+            {
+              packetCounts.at (0)++;
+              if ((*itPhy).second.txSuccessful == true)
+                {
+                  packetCounts.at (1)++;
+                }
+              else
+                {
+                  packetCounts.at (2)++;
+                  NS_LOG_DEBUG ("This packet transmission was interrupted at the PHY level");
+                }
+            }
+        }
+    }
+  return packetCounts;
+}
+
+std::vector<int>
+LoraPacketTracker::CountPhyPacketsPerGw (Time startTime, Time stopTime, int gwId)
 {
   // Vector packetCounts will contain - for the interval given in the input of
   // the function, the following fields: totPacketsSent receivedPackets
@@ -241,9 +276,14 @@ LoraPacketTracker::CountPhyPacketsPerGw (Time startTime, Time stopTime,
     {
       if ((*itPhy).second.sendTime >= startTime && (*itPhy).second.sendTime <= stopTime)
         {
-          packetCounts.at (0)++;
-
           NS_LOG_DEBUG ("Dealing with packet " << (*itPhy).second.packet);
+          if ((*itPhy).second.txSuccessful == false)
+            {
+              NS_LOG_DEBUG ("This packet transmission was interrupted at the PHY level");
+              break;
+            }
+            packetCounts.at (0)++;
+
           NS_LOG_DEBUG ("This packet was received by " <<
                         (*itPhy).second.outcomes.size () << " gateways");
 
@@ -303,9 +343,14 @@ LoraPacketTracker::PrintPhyPacketsPerGw (Time startTime, Time stopTime,
     {
       if ((*itPhy).second.sendTime >= startTime && (*itPhy).second.sendTime <= stopTime)
         {
-          packetCounts.at (0)++;
-
           NS_LOG_DEBUG ("Dealing with packet " << (*itPhy).second.packet);
+          if ((*itPhy).second.txSuccessful == false)
+            {
+              NS_LOG_DEBUG ("This packet transmission was interrupted at the PHY level");
+              break;
+            }
+
+          packetCounts.at (0)++;
           NS_LOG_DEBUG ("This packet was received by " <<
                         (*itPhy).second.outcomes.size () << " gateways");
 
@@ -433,6 +478,7 @@ LoraPacketTracker::CountMacPacketsPerEd (Time startTime, Time stopTime, uint32_t
       std::to_string (received);
   }
 
+  // TODO Update to take into account interrupted packets
 std::vector<double>
 LoraPacketTracker::TxTimeStatisticsPerEd (Time startTime, Time stopTime,
                                           uint32_t edId)
@@ -478,7 +524,7 @@ LoraPacketTracker::TxTimeStatisticsPerEd (Time startTime, Time stopTime,
       tmpVariance = tmpVariance + std::pow (txTimeIntervals.at (i) - meanTxInterval, 2);
     }
   outputTx.at (1) = meanTxInterval;
-  outputTx.at (2) = std::sqrt(tmpVariance / txTimeIntervals.size ());
+  outputTx.at (2) = std::sqrt (tmpVariance / txTimeIntervals.size ());
 
   return outputTx;
 }

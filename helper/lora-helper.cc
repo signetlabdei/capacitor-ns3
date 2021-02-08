@@ -64,80 +64,72 @@ NS_LOG_COMPONENT_DEFINE ("LoraHelper");
         // Connect Trace Sources if necessary
         if (m_packetTracker)
           {
-            if (phyHelper.GetDeviceType () ==
-                TypeId::LookupByName ("ns3::SimpleEndDeviceLoraPhy"))
+            if (phyHelper.GetDeviceType () == TypeId::LookupByName ("ns3::SimpleEndDeviceLoraPhy"))
               {
-                phy->TraceConnectWithoutContext ("StartSending",
-                                                 MakeCallback
-                                                 (&LoraPacketTracker::TransmissionCallback,
-                                                  m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "StartSending",
+                    MakeCallback (&LoraPacketTracker::TransmissionCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "InterruptedTransmission",
+                    MakeCallback (&LoraPacketTracker::InterruptedTransmissionCallback,
+                                  m_packetTracker));
               }
             else if (phyHelper.GetDeviceType () ==
                      TypeId::LookupByName ("ns3::SimpleGatewayLoraPhy"))
-            {
-              phy->TraceConnectWithoutContext ("StartSending",
-                                               MakeCallback
-                                               (&LoraPacketTracker::TransmissionCallback,
-                                                m_packetTracker));
-              phy->TraceConnectWithoutContext ("ReceivedPacket",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::PacketReceptionCallback,
-                                                 m_packetTracker));
-              phy->TraceConnectWithoutContext ("LostPacketBecauseInterference",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::InterferenceCallback,
-                                                 m_packetTracker));
-              phy->TraceConnectWithoutContext ("LostPacketBecauseNoMoreReceivers",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::NoMoreReceiversCallback,
-                                                 m_packetTracker));
-              phy->TraceConnectWithoutContext ("LostPacketBecauseUnderSensitivity",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::UnderSensitivityCallback,
-                                                 m_packetTracker));
-              phy->TraceConnectWithoutContext ("NoReceptionBecauseTransmitting",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::LostBecauseTxCallback,
-                                                 m_packetTracker));
-            }
-        }
+              {
+                phy->TraceConnectWithoutContext (
+                    "StartSending",
+                    MakeCallback (&LoraPacketTracker::TransmissionCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "ReceivedPacket",
+                    MakeCallback (&LoraPacketTracker::PacketReceptionCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "LostPacketBecauseInterference",
+                    MakeCallback (&LoraPacketTracker::InterferenceCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "LostPacketBecauseNoMoreReceivers",
+                    MakeCallback (&LoraPacketTracker::NoMoreReceiversCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "LostPacketBecauseUnderSensitivity",
+                    MakeCallback (&LoraPacketTracker::UnderSensitivityCallback, m_packetTracker));
+                phy->TraceConnectWithoutContext (
+                    "NoReceptionBecauseTransmitting",
+                    MakeCallback (&LoraPacketTracker::LostBecauseTxCallback, m_packetTracker));
+              }
+          }
 
-      // Create the MAC
-      Ptr<LorawanMac> mac = macHelper.Create (node, device);
-      NS_ASSERT (mac != 0);
-      mac->SetPhy (phy);
-      NS_LOG_DEBUG ("Done creating the MAC");
-      device->SetMac (mac);
+        // Create the MAC
+        Ptr<LorawanMac> mac = macHelper.Create (node, device);
+        NS_ASSERT (mac != 0);
+        mac->SetPhy (phy);
+        NS_LOG_DEBUG ("Done creating the MAC");
+        device->SetMac (mac);
 
-      if (m_packetTracker)
-        {
-          if (phyHelper.GetDeviceType () ==
-              TypeId::LookupByName ("ns3::SimpleEndDeviceLoraPhy"))
-            {
-              mac->TraceConnectWithoutContext ("SentNewPacket",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::MacTransmissionCallback,
-                                                 m_packetTracker));
+        if (m_packetTracker)
+          {
+            if (phyHelper.GetDeviceType () == TypeId::LookupByName ("ns3::SimpleEndDeviceLoraPhy"))
+              {
+                mac->TraceConnectWithoutContext (
+                    "SentNewPacket",
+                    MakeCallback (&LoraPacketTracker::MacTransmissionCallback, m_packetTracker));
 
-              mac->TraceConnectWithoutContext ("RequiredTransmissions",
-                                               MakeCallback
-                                                 (&LoraPacketTracker::RequiredTransmissionsCallback,
-                                                 m_packetTracker));
-            }
-          else if (phyHelper.GetDeviceType () ==
-                   TypeId::LookupByName ("ns3::SimpleGatewayLoraPhy"))
-            {
-              mac->TraceConnectWithoutContext ("SentNewPacket",
-                                               MakeCallback
-                                               (&LoraPacketTracker::MacTransmissionCallback,
-                                                m_packetTracker));
+                mac->TraceConnectWithoutContext (
+                    "RequiredTransmissions",
+                    MakeCallback (&LoraPacketTracker::RequiredTransmissionsCallback,
+                                  m_packetTracker));
+              }
+            else if (phyHelper.GetDeviceType () ==
+                     TypeId::LookupByName ("ns3::SimpleGatewayLoraPhy"))
+              {
+                mac->TraceConnectWithoutContext (
+                    "SentNewPacket",
+                    MakeCallback (&LoraPacketTracker::MacTransmissionCallback, m_packetTracker));
 
-              mac->TraceConnectWithoutContext ("ReceivedPacket",
-                                               MakeCallback
-                                               (&LoraPacketTracker::MacGwReceptionCallback,
-                                                m_packetTracker));
-            }
-        }
+                mac->TraceConnectWithoutContext (
+                    "ReceivedPacket",
+                    MakeCallback (&LoraPacketTracker::MacGwReceptionCallback, m_packetTracker));
+              }
+          }
 
       node->AddDevice (device);
       devices.Add (device);
