@@ -338,6 +338,18 @@ LoraRadioEnergyModel::SetEnergyChangedCallback (LoraRadioEnergyChangedCallback c
 }
 
 void
+LoraRadioEnergyModel::SetEnergyConstantCallback (LoraRadioEnergyConstantCallback callback)
+{
+  NS_LOG_FUNCTION (this);
+  if (callback.IsNull ())
+    {
+      NS_LOG_DEBUG ("LoraRadioEnergyModel:Setting NULL energy constant callback!");
+    }
+  m_energyConstantCallback = callback;
+  NS_LOG_DEBUG ("Callback connected");
+}
+
+void
 LoraRadioEnergyModel::SetTxCurrentModel (Ptr<LoraTxCurrentModel> model)
 {
   m_txCurrentModel = model;
@@ -439,6 +451,19 @@ LoraRadioEnergyModel::HandleEnergyChanged (void)
       NS_LOG_DEBUG ("Calling the callback...");
       double energy = m_source->GetRemainingEnergy ();
       m_energyChangedCallback (energy);
+    }
+}
+
+void
+LoraRadioEnergyModel::HandleEnergyConstant (void)
+{
+  NS_LOG_FUNCTION (this);
+  // invoke energy recharged callback, if set.
+  if (!m_energyConstantCallback.IsNull ())
+    {
+      NS_LOG_DEBUG ("Calling the callback...");
+      double energy = m_source->GetRemainingEnergy ();
+      m_energyConstantCallback (energy);
     }
 }
 

@@ -23,6 +23,7 @@
 #include "ns3/callback.h"
 #include "ns3/energy-aware-sender.h"
 #include "ns3/log-macros-enabled.h"
+#include "ns3/nstime.h"
 #include "ns3/object.h"
 #include "ns3/pointer.h"
 #include "ns3/log.h"
@@ -56,11 +57,16 @@ namespace ns3 {
                              MakeDoubleAccessor (&EnergyAwareSender::GetEnergyThreshold,
                                                  &EnergyAwareSender::SetEnergyThreshold),
                              MakeDoubleChecker<double> ())
+              .AddAttribute (
+                  "MaxDesyncDelay", "The upper limit of the desync delay", DoubleValue (0),
+                  MakeDoubleAccessor (&EnergyAwareSender::m_maxDesyncDelay),
+                  MakeDoubleChecker<double> ())
               .AddAttribute ("MinInterval", "The minimum interval between packet sends of this app",
                              TimeValue (Seconds (0)),
                              MakeTimeAccessor (&EnergyAwareSender::GetMinInterval,
                                                &EnergyAwareSender::SetMinInterval),
                              MakeTimeChecker ());
+
       // .AddAttribute ("PacketSizeRandomVariable", "The random variable that determines the shape of the packet size, in bytes",
       //                StringValue ("ns3::UniformRandomVariable[Min=0,Max=10]"),
       //                MakePointerAccessor (&EnergyAwareSender::m_pktSizeRV),
@@ -192,6 +198,11 @@ namespace ns3 {
       NS_LOG_DEBUG ("Connect the callback");
       radioEnergy-> SetEnergyChangedCallback
         (MakeCallback(&EnergyAwareSender::EnergyAwareSendPacketCallback, this));
+      radioEnergy->SetEnergyConstantCallback (
+          MakeCallback (&EnergyAwareSender::EnergyAwareSendPacketCallback, this));
+
+      // Build the random variable for desync delay
+      m_desyncDelay = CreateObject<UniformRandomVariable> ();
 
       // Schedule the next SendPacket event
       // Simulator::Cancel (m_sendEvent);
@@ -217,9 +228,9 @@ namespace ns3 {
 
       // Send packet only if a time has passed:
       // - 1st packet and initial delay
-      // - not 1st packet, at least m_interval has passed
-      if (((m_firstSending == 1) && !(Simulator::Now () < m_initialDelay)) ||
-          (Simulator::Now () - m_sendTime > m_interval))
+      // - not 1st packet, at least m_interval has passed - also addd desync delay
+      if (((m_firstSending == 1) && !(Simulator::Now () < m_initialDelay)) || 
+        ((m_scheduledSendPacket.IsExpired()) && (Simulator::Now () - m_sendTime > m_interval)))
         {
           if (m_tryingToSend)
             {
@@ -229,7 +240,9 @@ namespace ns3 {
             {
               NS_LOG_WARN ("Enough Energy to send a packet " << newEnergy
                            << " threshold: " << m_energyThreshold );
-              SendPacket ();
+              double desyncDelay = m_desyncDelay -> GetValue (0, m_maxDesyncDelay);
+              m_scheduledSendPacket = Simulator::Schedule(Seconds(desyncDelay),
+                                  &EnergyAwareSender::SendPacket, this);
               m_firstSending = 0;
             }
           else

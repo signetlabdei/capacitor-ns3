@@ -26,6 +26,7 @@
 #include "ns3/nstime.h"
 #include "ns3/lorawan-mac.h"
 #include "ns3/attribute.h"
+#include "ns3/random-variable-stream.h"
 
 namespace ns3 {
 namespace lorawan {
@@ -92,12 +93,12 @@ private:
 private:
   
   double m_energyThreshold;
+  double m_maxDesyncDelay;
   Time m_initialDelay;
   Time m_interval;
   Time m_sendTime;
   bool m_firstSending;
   bool m_tryingToSend;
-
 
   /**
    * The MAC layer of this node
@@ -109,12 +110,20 @@ private:
    */
   uint8_t m_basePktSize;
 
-
   /**
    * The random variable that adds bytes to the packet size
    */
   Ptr<RandomVariableStream> m_pktSizeRV;
 
+  /**
+   * The random variable that add a desync delay when sending a packet
+   */
+  Ptr<UniformRandomVariable> m_desyncDelay;
+
+  /**
+   * The scheduled packet transmission
+   */
+  EventId m_scheduledSendPacket;
 
 };
 

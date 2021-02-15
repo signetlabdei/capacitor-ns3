@@ -77,6 +77,7 @@ double E = 3.3; // V
 double voltageThLow = 0.545454; // 1.8 V
 double voltageThHigh = 0.9090; // 3 V
 double energyAwareSenderVoltageTh = 2.5; // V
+double eaMaxDesyncDelay = 1;
 uint8_t dr = 5;
 int confirmed = 0;
 bool realisticChannelModel = false; // Channel model
@@ -270,6 +271,8 @@ OnEndDeviceTx (std::string context, EndDeviceLoraPhy::State oldstatus,
     cmd.AddValue ("confirmed", "Percentage of devices sending confirmed message", confirmed);
     cmd.AddValue ("dr", "dr (dr=-1 = based on the channel)", dr);
     cmd.AddValue ("packetSize", "PacketSize", packetSize);
+    cmd.AddValue ("eaMaxDesyncDelay", "Max desync delay of energy aware sender",
+                  eaMaxDesyncDelay);
     // cmd.AddValue ("enableVariableHarvester", "Enable harvester from input file",
     //                enableVariableHarvester);
     // cmd.AddValue ("sun", "Input from sunny day", sun);
@@ -284,11 +287,11 @@ OnEndDeviceTx (std::string context, EndDeviceLoraPhy::State oldstatus,
     // Set up logging
     LogComponentEnable ("NetworkAnalysisCapacitor", LOG_LEVEL_ALL);
     // LogComponentEnable ("LoraPacketTracker", LOG_LEVEL_ALL);
-    // LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
+    LogComponentEnable ("CapacitorEnergySource", LOG_LEVEL_ALL);
     // LogComponentEnable ("CapacitorEnergySourceHelper", LOG_LEVEL_ALL);
     // LogComponentEnable ("LoraRadioEnergyModel", LOG_LEVEL_ALL);
-    LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
-    LogComponentEnable ("EnergyAwareSenderHelper", LOG_LEVEL_ALL);
+    // LogComponentEnable ("EnergyAwareSender", LOG_LEVEL_ALL);
+    // LogComponentEnable ("EnergyAwareSenderHelper", LOG_LEVEL_ALL);
     // LogComponentEnable ("EnergyHarvester", LOG_LEVEL_ALL);
     // LogComponentEnable ("VariableEnergyHarvester", LOG_LEVEL_ALL);
     // LogComponentEnable ("EnergySource", LOG_LEVEL_ALL);
@@ -508,6 +511,8 @@ OnEndDeviceTx (std::string context, EndDeviceLoraPhy::State oldstatus,
         EnergyAwareSenderHelper energyAwareSenderHelper;
         double energyTh = capacitance / 1000 * pow (energyAwareSenderVoltageTh, 2) / 2;
         NS_LOG_WARN (voltageThHigh * E);
+        energyAwareSenderHelper.SetAttribute("MaxDesyncDelay",
+                                             DoubleValue(eaMaxDesyncDelay));
         energyAwareSenderHelper.SetEnergyThreshold (energyTh);
         energyAwareSenderHelper.SetMinInterval (Seconds (appPeriod));
         energyAwareSenderHelper.SetPacketSize (packetSize);

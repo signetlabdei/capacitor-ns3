@@ -22,6 +22,7 @@
 #include "capacitor-energy-source.h"
 #include "lora-radio-energy-model.h"
 #include "ns3/abort.h"
+#include "ns3/device-energy-model.h"
 #include "ns3/end-device-lora-phy.h"
 #include "ns3/log-macros-enabled.h"
 #include "ns3/log.h"
@@ -33,6 +34,7 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/pointer.h"
 #include "ns3/simulator.h"
+#include "ns3/type-id.h"
 #include "src/core/model/string.h"
 #include <bits/stdint-intn.h>
 #include <cmath>
@@ -190,7 +192,11 @@ CapacitorEnergySource::GetRemainingEnergy (void)
 {
   NS_LOG_FUNCTION (this);
   // update energy source to get the latest remaining energy.
-  UpdateEnergySource ();
+  if (!(Simulator::Now() == m_lastUpdateTime))
+    {
+      UpdateEnergySource ();
+    }
+
   return m_remainingEnergyJ;
 }
 
@@ -256,7 +262,12 @@ CapacitorEnergySource::UpdateEnergySource (void)
       else if (m_actualVoltageV != actualVoltage)
         {
           NS_LOG_DEBUG ("Energy changed ");
-          NotifyEnergyChanged ();
+          HandleEnergyChangedEvent ();
+        }
+      else if (m_actualVoltageV == actualVoltage)
+        {
+          NS_LOG_DEBUG ("Energy constant ");
+          HandleEnergyConstantEvent ();
         }
 
     if (m_voltageUpdateEvent.IsExpired ())
@@ -319,7 +330,6 @@ void
 CapacitorEnergySource::HandleEnergyDrainedEvent (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("CapacitorEnergySource:Energy depleted!");
   NotifyEnergyDrained (); // notify DeviceEnergyModel objects
 }
 
@@ -327,12 +337,44 @@ void
 CapacitorEnergySource::HandleEnergyRechargedEvent (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("CapacitorEnergySource:Energy recharged!");
   NotifyEnergyRecharged (); // notify DeviceEnergyModel objects
 }
 
-  double
-  CapacitorEnergySource::ComputeVoltage (double initialVoltage, double Iload, Time duration)
+void
+CapacitorEnergySource::HandleEnergyChangedEvent (void)
+{
+  NS_LOG_FUNCTION (this);
+  NotifyEnergyChanged (); // notify DeviceEnergyModel objects
+}
+
+void
+CapacitorEnergySource::HandleEnergyConstantEvent (void)
+{
+  NS_LOG_FUNCTION (this);
+  NotifyEnergyConstant (); // notify DeviceEnergyModel objects
+}
+
+void
+CapacitorEnergySource::NotifyEnergyConstant (void)
+{
+  NS_LOG_FUNCTION (this);
+  // notify all device energy models installed on node
+  DeviceEnergyModelContainer::Iterator i;
+  for (i = m_models.Begin (); i != m_models.End (); i++)
+    {
+      Ptr<lorawan::LoraRadioEnergyModel> loraradio =
+          (*i)->GetObject<ns3::lorawan::LoraRadioEnergyModel> ();
+      // It is a LoraRadioEnergyModel
+      if (!(loraradio == 0))
+        {
+          TypeId typeId = (*loraradio).GetTypeId ();
+          NS_LOG_DEBUG (typeId.GetName ());
+          loraradio->ns3::lorawan::LoraRadioEnergyModel::HandleEnergyConstant ();
+        }
+    }
+}
+
+  double CapacitorEnergySource::ComputeVoltage (double initialVoltage, double Iload, Time duration)
   {
     NS_LOG_FUNCTION (this << " Iload (A): " << Iload << " duration (s): " << duration);
     double ph = GetHarvestersPower ();

@@ -154,6 +154,8 @@ public:
 
   int64_t AssignStreams (int64_t stream);
 
+  void NotifyEnergyConstant (void);
+
 private:
   /// Defined in ns3::Object
   void DoInitialize (void);
@@ -175,6 +177,9 @@ private:
    * is then responsible for its own handler.
    */
   void HandleEnergyRechargedEvent (void);
+
+  void HandleEnergyChangedEvent (void);
+  void HandleEnergyConstantEvent (void);
 
   /**
    * Compute the voltage at this time.

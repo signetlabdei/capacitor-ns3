@@ -127,6 +127,7 @@ LoraPacketTracker::TransmissionCallback (Ptr<Packet const> packet, uint32_t edId
       status.txSuccessful = true;
 
       m_packetTracker.insert (std::pair<Ptr<Packet const>, PacketStatus> (packet, status));
+      NS_LOG_DEBUG ("Inserted PHY packet");
     }
 }
 
@@ -141,8 +142,8 @@ LoraPacketTracker::PacketReceptionCallback (Ptr<Packet const> packet, uint32_t g
                                  << gwId);
 
       std::map<Ptr<Packet const>, PacketStatus>::iterator it = m_packetTracker.find (packet);
-      (*it).second.outcomes.insert (std::pair<int, enum PhyPacketOutcome> (gwId,
-                                                                           RECEIVED));
+      NS_LOG_DEBUG((*it).second.txSuccessful) ;
+      (*it).second.outcomes.insert (std::pair<int, enum PhyPacketOutcome> (gwId, RECEIVED));
     }
 }
 
@@ -280,50 +281,48 @@ LoraPacketTracker::CountPhyPacketsPerGw (Time startTime, Time stopTime, int gwId
           if ((*itPhy).second.txSuccessful == false)
             {
               NS_LOG_DEBUG ("This packet transmission was interrupted at the PHY level");
-              break;
+              // Do nothing and go to next packet
             }
-            packetCounts.at (0)++;
-
-          NS_LOG_DEBUG ("This packet was received by " <<
-                        (*itPhy).second.outcomes.size () << " gateways");
-
-          if ((*itPhy).second.outcomes.count (gwId) > 0)
+          else
             {
-              switch ((*itPhy).second.outcomes.at (gwId))
+              packetCounts.at (0)++;
+
+              NS_LOG_DEBUG ("This packet was received by " <<
+                            (*itPhy).second.outcomes.size () << " gateways");
+
+              if ((*itPhy).second.outcomes.count (gwId) > 0)
                 {
-                case RECEIVED:
-                  {
-                    packetCounts.at (1)++;
-                    break;
-                  }
-                case INTERFERED:
-                  {
-                    packetCounts.at (2)++;
-                    break;
-                  }
-                case NO_MORE_RECEIVERS:
-                  {
-                    packetCounts.at (3)++;
-                    break;
-                  }
-                case UNDER_SENSITIVITY:
-                  {
-                    packetCounts.at (4)++;
-                    break;
-                  }
-                case LOST_BECAUSE_TX:
-                  {
-                    packetCounts.at (5)++;
-                    break;
-                  }
-                case UNSET:
-                  {
-                    break;
-                  }
+                  switch ((*itPhy).second.outcomes.at (gwId))
+                    {
+                      case RECEIVED: {
+                        packetCounts.at (1)++;
+                        break;
+                      }
+                      case INTERFERED: {
+                        packetCounts.at (2)++;
+                        break;
+                      }
+                      case NO_MORE_RECEIVERS: {
+                        packetCounts.at (3)++;
+                        break;
+                      }
+                      case UNDER_SENSITIVITY: {
+                        packetCounts.at (4)++;
+                        break;
+                      }
+                      case LOST_BECAUSE_TX: {
+                        packetCounts.at (5)++;
+                        break;
+                      }
+                      case UNSET: {
+                        break;
+                      }
+                    }
                 }
             }
-        }
-    }
+
+        } // time
+    } // iterator
 
   return packetCounts;
 }
@@ -335,63 +334,7 @@ LoraPacketTracker::PrintPhyPacketsPerGw (Time startTime, Time stopTime,
   // the function, the following fields: totPacketsSent receivedPackets
   // interferedPackets noMoreGwPackets underSensitivityPackets
 
-  std::vector<int> packetCounts (6, 0);
-
-  for (auto itPhy = m_packetTracker.begin ();
-       itPhy != m_packetTracker.end ();
-       ++itPhy)
-    {
-      if ((*itPhy).second.sendTime >= startTime && (*itPhy).second.sendTime <= stopTime)
-        {
-          NS_LOG_DEBUG ("Dealing with packet " << (*itPhy).second.packet);
-          if ((*itPhy).second.txSuccessful == false)
-            {
-              NS_LOG_DEBUG ("This packet transmission was interrupted at the PHY level");
-              break;
-            }
-
-          packetCounts.at (0)++;
-          NS_LOG_DEBUG ("This packet was received by " <<
-                        (*itPhy).second.outcomes.size () << " gateways");
-
-          if ((*itPhy).second.outcomes.count (gwId) > 0)
-            {
-              switch ((*itPhy).second.outcomes.at (gwId))
-                {
-                case RECEIVED:
-                  {
-                    packetCounts.at (1)++;
-                    break;
-                  }
-                case INTERFERED:
-                  {
-                    packetCounts.at (2)++;
-                    break;
-                  }
-                case NO_MORE_RECEIVERS:
-                  {
-                    packetCounts.at (3)++;
-                    break;
-                  }
-                case UNDER_SENSITIVITY:
-                  {
-                    packetCounts.at (4)++;
-                    break;
-                  }
-                case LOST_BECAUSE_TX:
-                  {
-                    packetCounts.at (5)++;
-                    break;
-                  }
-                case UNSET:
-                  {
-                    break;
-                  }
-                }
-            }
-        }
-    }
-
+  std::vector<int> packetCounts = CountPhyPacketsPerGw(startTime, stopTime, gwId);
   std::string output ("");
   for (int i = 0; i < 6; ++i)
     {
